@@ -119,6 +119,24 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
+.subscribe-link {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-left: auto;
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 12px;
+    transition: var(--transition);
+    text-transform: lowercase;
+}
+
+.subscribe-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(10, 132, 255, 0.1);
+}
+
 nav ul {
     list-style: none;
     display: flex;
@@ -199,10 +217,6 @@ header {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2.5rem;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    /* Optional: Header could have its own blur, but keeping it simple for now */
 }
 
 h1 {
@@ -338,7 +352,7 @@ h1 {
 }
 
 .card:hover {
-    background: var(--bg-card-hover);
+    /* Background change removed as per user request */
     border-color: var(--border-hover);
     transform: translateY(-4px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
@@ -451,6 +465,12 @@ h1 {
     font-size: 1rem;
 }
 
+.market-dropdown option {
+    background: #1c1c1e;
+    color: #fff;
+    padding: 10px;
+}
+
 .market-dropdown:hover {
     background: rgba(255, 255, 255, 0.12);
 }
@@ -506,6 +526,22 @@ h1 {
 }
 
 /* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    padding-top: 50px;
+    padding-bottom: 50px;
+}
+
 .modal-content {
     background: #1c1c1e;
     border-radius: 24px;
@@ -660,4 +696,10 @@ h1 {
     border-radius: 4px;
     font-size: 0.7rem;
     font-weight: 600;
+    margin-top: 10px;
+}
+
+.market-chart-container {
+    height: 300px;
+    width: 100%;
 }

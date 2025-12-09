@@ -3,6 +3,7 @@ from app.scheduler import start_scheduler
 
 def create_app():
     app = Flask(__name__)
+    app.secret_key = 'dev-secret-key-change-in-production'
     
     # Register Blueprints
     from app.routes import main
@@ -16,6 +17,6 @@ def create_app():
     # But for "industrial format" single app usage, this is fine.
     import os
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        start_scheduler()
+        start_scheduler(app)
 
     return app

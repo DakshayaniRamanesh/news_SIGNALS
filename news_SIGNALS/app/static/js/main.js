@@ -88,8 +88,17 @@ async function updateNotifications() {
         const response = await fetch('/api/data');
         const data = await response.json();
 
-        // Filter for "High Risk" or "Major Event"
-        const alerts = data.filter(item => item.impact_level === 'High Risk' || (item.event_flag && item.event_flag !== 'Normal' && item.event_flag !== 'nan'));
+        // Filter for "High Risk" only as per user request for the red light
+        const alerts = data.filter(item => item.impact_level === 'High Risk');
+
+        // Check for > 40% High Risk Alert
+        if (data.length > 0) {
+            const highRiskRatio = alerts.length / data.length;
+            if (highRiskRatio > 0.4 && !sessionStorage.getItem('riskAlertShown')) {
+                alert(`⚠️ CRITICAL WARNING: High Risk Volume is ${Math.round(highRiskRatio * 100)}%!\n\nMore than 40% of current news items are flagged as High Risk.`);
+                sessionStorage.setItem('riskAlertShown', 'true');
+            }
+        }
 
         const notifList = document.getElementById('notif-list');
         const notifDot = document.getElementById('notif-dot');
@@ -154,37 +163,8 @@ function setupExportHandler() {
     if (!exportBtn) return;
 
     exportBtn.addEventListener('click', () => {
-        if (!currentData || currentData.length === 0) {
-            alert('No data available to export.');
-            return;
-        }
-
-        // Convert JSON to CSV
-        const headers = Object.keys(currentData[0]);
-        const csvRows = [];
-
-        // Add headers
-        csvRows.push(headers.join(','));
-
-        // Add values
-        for (const row of currentData) {
-            const values = headers.map(header => {
-                const escaped = ('' + (row[header] || '')).replace(/"/g, '\\"');
-                return `"${escaped}"`;
-            });
-            csvRows.push(values.join(','));
-        }
-
-        const csvString = csvRows.join('\n');
-        const blob = new Blob([csvString], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.setAttribute('hidden', '');
-        a.setAttribute('href', url);
-        a.setAttribute('download', `signal_monitor_export_${new Date().toISOString().slice(0, 10)}.csv`);
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Trigger PDF download in new tab
+        window.open('/api/export-pdf', '_blank');
     });
 }
 
@@ -688,6 +668,7 @@ function renderMarketChart(history, type) {
             scales: {
                 y: {
                     beginAtZero: false,
+                    grace: '20%',
                     grid: { color: '#334155' },
                     ticks: { color: '#94a3b8' }
                 },
@@ -761,6 +742,7 @@ function renderFuelChart(history) {
             scales: {
                 y: {
                     beginAtZero: false,
+                    grace: '20%',
                     grid: { color: '#334155' },
                     ticks: { color: '#94a3b8' }
                 },

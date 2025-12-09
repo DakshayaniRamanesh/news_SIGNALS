@@ -1,4 +1,7 @@
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, render_template, jsonify, request, redirect, url_for, flash, make_response, send_from_directory
+from datetime import datetime
+from io import BytesIO
+from xhtml2pdf import pisa
 import pandas as pd
 import os
 import time
@@ -219,5 +222,69 @@ def update_location_data():
         from app.services.nlp_service import get_location_summary
         data = get_location_summary()
         return jsonify({"status": "success", "data": data})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@main.route('/api/export-pdf')
+def export_pdf():
+    """Generate and return a PDF report"""
+    from app.services.email_service import generate_pdf_report
+    
+    pdf_bytes = generate_pdf_report()
+    
+    if not pdf_bytes:
+         return "Error generating PDF or no data", 500
+         
+    response = make_response(pdf_bytes)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=signal_report_{int(time.time())}.pdf'
+    
+    return response
+
+@main.route('/subscribe', methods=['GET', 'POST'])
+def subscribe():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        notifications = request.form.get('notifications') == 'on'
+        report = request.form.get('report') == 'on'
+        
+        if email:
+            try:
+                # Check for duplicates
+                exists = False
+                if os.path.exists('subscribers.txt'):
+                    with open('subscribers.txt', 'r') as f:
+                        for line in f:
+                            if email in line:
+                                exists = True
+                                break
+                
+                if exists:
+                    return redirect(url_for('main.subscribe', status='duplicate'))
+
+                # Simple storage for demo
+                with open('subscribers.txt', 'a') as f:
+                    f.write(f"{datetime.now()},{email},{notifications},{report}\n")
+
+                # Send confirmation email
+                from app.services.email_service import send_confirmation_email
+                send_confirmation_email(email)
+
+                # Redirect with success status to show confirmation screen
+                return redirect(url_for('main.subscribe', status='success'))
+            except Exception as e:
+                flash(f"Error subscribing: {e}", "error")
+                return redirect(url_for('main.subscribe'))
+        
+    return render_template('subscribe.html')
+
+@main.route('/api/admin/send-report', methods=['POST'])
+def trigger_daily_report():
+    """Manually trigger the daily report blast to all subscribers."""
+    try:
+        from app.services.email_service import send_daily_reports
+        from flask import current_app
+        send_daily_reports(current_app._get_current_object())
+        return jsonify({"status": "success", "message": "Daily reports triggered"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

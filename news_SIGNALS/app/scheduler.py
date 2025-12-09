@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.services.data_processor import run_pipeline
 from app.services.market_data import update_market_data, initialize_sample_data
+from app.services.email_service import send_daily_reports
 import atexit
 import logging
 from datetime import datetime
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 scheduler = None
 current_interval = 15
 
-def start_scheduler():
+def start_scheduler(app):
     global scheduler, current_interval
     if scheduler is None:
         scheduler = BackgroundScheduler()
@@ -19,10 +20,14 @@ def start_scheduler():
         
         # Update market data daily at 9 AM
         scheduler.add_job(func=update_market_data, trigger="cron", hour=9, minute=0, id='market_data_job')
+
+        # Send Daily Signal Reports at 8 AM
+        scheduler.add_job(func=send_daily_reports, trigger="cron", hour=8, minute=0, id='daily_email_job', args=[app])
         
         scheduler.start()
         logger.info(f"Scheduler started. Pipeline will run every {current_interval} minutes.")
         logger.info("Market data will update daily at 9:00 AM.")
+        logger.info("Daily reports will send daily at 8:00 AM.")
         
         # Initialize sample data if needed (only runs once if no data exists)
         initialize_sample_data()
