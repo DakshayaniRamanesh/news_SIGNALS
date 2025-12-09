@@ -10,14 +10,18 @@ from xhtml2pdf import pisa
 from io import BytesIO
 
 # Configuration - Replace with Environment Variables in Production
-SMTP_SERVER = "smtp.gmail.com"  # Example: Gmail
-SMTP_PORT = 587
-SMTP_USER = "your_email@gmail.com"  # REPLACE THIS
-SMTP_PASSWORD = "your_app_password"  # REPLACE THIS
-SENDER_EMAIL = "your_email@gmail.com" # REPLACE THIS
+# Configuration - Load from Environment Variables
+SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
+SMTP_USER = os.environ.get("SMTP_USER")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL", SMTP_USER)
+APP_NAME = os.environ.get("APP_NAME", "SignalMon")
 
-DATA_FILE = os.path.join("data", "final_data.csv")
-SUBSCRIBERS_FILE = "subscribers.txt"
+# Resolve paths relative to this file
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+DATA_FILE = os.path.join(BASE_DIR, "data", "final_data.csv")
+SUBSCRIBERS_FILE = os.path.join(BASE_DIR, "subscribers.txt")
 
 def generate_pdf_report():
     """Generates the PDF report and returns the bytes."""
@@ -69,12 +73,12 @@ def generate_pdf_report():
 
 def send_email_with_pdf(recipient_email, pdf_bytes, high_risk_count):
     """Sends the email with PDF attachment."""
-    if not SMTP_USER or "your_email" in SMTP_USER:
-        print(f"Mocking email send to {recipient_email} - SMTP not configured.")
+    if not SMTP_USER or not SMTP_PASSWORD:
+        print(f"Mocking email send to {recipient_email} - SMTP credentials not set. Set SMTP_USER and SMTP_PASSWORD env vars.")
         return False
 
     msg = MIMEMultipart()
-    msg['Subject'] = f"Daily Signal Report - {datetime.now().strftime('%Y-%m-%d')}"
+    msg['Subject'] = f"Daily {APP_NAME} Report - {datetime.now().strftime('%Y-%m-%d')}"
     msg['From'] = SENDER_EMAIL
     msg['To'] = recipient_email
 
@@ -89,7 +93,7 @@ def send_email_with_pdf(recipient_email, pdf_bytes, high_risk_count):
     Please find the full detailed report attached.
     
     Regards,
-    SignalMon Team
+    {APP_NAME} Team
     """
     
     msg.attach(MIMEText(body_text, 'plain'))
@@ -112,31 +116,41 @@ def send_email_with_pdf(recipient_email, pdf_bytes, high_risk_count):
 
 def send_confirmation_email(recipient_email):
     """Sends a subscription confirmation email."""
-    if not SMTP_USER or "your_email" in SMTP_USER:
-        print(f"Mocking confirmation email to {recipient_email}")
+    if not SMTP_USER or not SMTP_PASSWORD:
+        print(f"Mocking confirmation email to {recipient_email} - SMTP credentials not set.")
         return False
 
     msg = MIMEMultipart()
-    msg['Subject'] = "Welcome to SignalMon - Subscription Confirmed"
+    msg['Subject'] = f"Welcome to {APP_NAME} - Subscription Confirmed"
     msg['From'] = SENDER_EMAIL
     msg['To'] = recipient_email
+    msg.add_header('Content-Type', 'multipart/alternative')
 
-    body_text = """
+    # Plain text version
+    body_text = f"""
     Hello,
 
-    Thank you for subscribing to SignalMon!
+    Thank you for subscribing to {APP_NAME}!
     
     You will now receive:
     - Instant alerts for High Risk events
-    - Daily PDF Signal Reports
+    - Daily PDF {APP_NAME} Reports
     
     Stay informed and safe.
     
     Regards,
-    SignalMon Team
+    {APP_NAME} Team
     """
     
     msg.attach(MIMEText(body_text, 'plain'))
+    
+    # HTML version with animation
+    try:
+        html_content = render_template('email/welcome.html', app_name=APP_NAME, year=datetime.now().year)
+        msg.attach(MIMEText(html_content, 'html'))
+    except Exception as e:
+        print(f"Error rendering HTML email: {e}")
+
 
     try:
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:

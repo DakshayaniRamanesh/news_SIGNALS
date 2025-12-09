@@ -11,7 +11,10 @@ from app.services import market_data
 
 main = Blueprint('main', __name__)
 
-DATA_FILE = os.path.join("data", "final_data.csv")
+# Resolve paths relative to this file
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DATA_FILE = os.path.join(BASE_DIR, "data", "final_data.csv")
+SUBSCRIBERS_FILE = os.path.join(BASE_DIR, "subscribers.txt")
 
 @main.route('/')
 def index():
@@ -241,6 +244,19 @@ def export_pdf():
     
     return response
 
+@main.route('/api/subscribers')
+def get_subscribers():
+    """Get subscriber count"""
+    if os.path.exists(SUBSCRIBERS_FILE):
+        try:
+            with open(SUBSCRIBERS_FILE, 'r') as f:
+                lines = [line.strip() for line in f if line.strip()]
+            return jsonify({"count": len(lines)})
+        except Exception:
+            return jsonify({"count": 0})
+    else:
+        return jsonify({"count": 0})
+
 @main.route('/subscribe', methods=['GET', 'POST'])
 def subscribe():
     if request.method == 'POST':
@@ -252,8 +268,9 @@ def subscribe():
             try:
                 # Check for duplicates
                 exists = False
-                if os.path.exists('subscribers.txt'):
-                    with open('subscribers.txt', 'r') as f:
+                exists = False
+                if os.path.exists(SUBSCRIBERS_FILE):
+                    with open(SUBSCRIBERS_FILE, 'r') as f:
                         for line in f:
                             if email in line:
                                 exists = True
@@ -263,7 +280,7 @@ def subscribe():
                     return redirect(url_for('main.subscribe', status='duplicate'))
 
                 # Simple storage for demo
-                with open('subscribers.txt', 'a') as f:
+                with open(SUBSCRIBERS_FILE, 'a') as f:
                     f.write(f"{datetime.now()},{email},{notifications},{report}\n")
 
                 # Send confirmation email

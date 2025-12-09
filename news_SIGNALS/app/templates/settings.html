@@ -156,6 +156,10 @@
             <span style="color: var(--text-secondary);">Next Run:</span>
             <span id="next-run">Calculating...</span>
         </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+            <span style="color: var(--text-secondary);">Subscribers:</span>
+            <span id="subscriber-count" style="color: white;">--</span>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -166,6 +170,7 @@
         const intervalInput = document.getElementById('interval');
         const saveBtn = document.getElementById('save-btn');
         const nextRunSpan = document.getElementById('next-run');
+        const subscriberCountSpan = document.getElementById('subscriber-count');
 
         // Model elements
         const modelSelect = document.getElementById('model-select');
@@ -173,7 +178,7 @@
         const currentModelName = document.getElementById('current-model-name');
         const modelStatus = document.getElementById('model-status');
 
-        // Load Scheduler Settings
+        // Load Scheduler Settings & Subscribers
         try {
             const response = await fetch('/api/settings');
             const data = await response.json();
@@ -183,6 +188,12 @@
             if (data.next_run) {
                 nextRunSpan.textContent = data.next_run;
             }
+            
+            // Fetch subscribers
+            const subRes = await fetch('/api/subscribers');
+            const subData = await subRes.json();
+            subscriberCountSpan.textContent = subData.count;
+
         } catch (error) {
             console.error('Error loading settings:', error);
         }
