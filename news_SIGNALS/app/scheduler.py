@@ -18,16 +18,15 @@ def start_scheduler(app):
         # Run every 15 minutes by default
         scheduler.add_job(func=run_pipeline, trigger="interval", minutes=current_interval, id='pipeline_job')
         
-        # Update market data daily at 9 AM
-        scheduler.add_job(func=update_market_data, trigger="cron", hour=9, minute=0, id='market_data_job')
+        # Update market data every 15 minutes (synced with pipeline)
+        scheduler.add_job(func=update_market_data, trigger="interval", minutes=current_interval, id='market_data_job')
 
-        # Send Daily Signal Reports at 8 AM
-        scheduler.add_job(func=send_daily_reports, trigger="cron", hour=8, minute=0, id='daily_email_job', args=[app])
+        # Send Daily Signal Reports at 6 AM
+        scheduler.add_job(func=send_daily_reports, trigger="cron", hour=6, minute=0, id='daily_email_job', args=[app])
         
         scheduler.start()
-        logger.info(f"Scheduler started. Pipeline will run every {current_interval} minutes.")
-        logger.info("Market data will update daily at 9:00 AM.")
-        logger.info("Daily reports will send daily at 8:00 AM.")
+        logger.info(f"Scheduler started. Pipeline and Market Data will run every {current_interval} minutes.")
+        logger.info("Daily reports will send daily at 6:00 AM.")
         
         # Initialize sample data if needed (only runs once if no data exists)
         initialize_sample_data()
@@ -43,6 +42,7 @@ def refresh_now():
     global scheduler
     if scheduler and scheduler.running:
         scheduler.add_job(func=run_pipeline, trigger="date", id=f'manual_refresh_{datetime.now().timestamp()}')
+        scheduler.add_job(func=update_market_data, trigger="date", id=f'manual_market_refresh_{datetime.now().timestamp()}')
         return True
     return False
 
@@ -51,8 +51,9 @@ def update_interval(minutes):
     if scheduler and scheduler.running:
         try:
             scheduler.reschedule_job('pipeline_job', trigger='interval', minutes=minutes)
+            scheduler.reschedule_job('market_data_job', trigger='interval', minutes=minutes)
             current_interval = minutes
-            logger.info(f"Rescheduled pipeline to run every {minutes} minutes.")
+            logger.info(f"Rescheduled pipeline and market data to run every {minutes} minutes.")
             return True
         except Exception as e:
             logger.error(f"Failed to reschedule: {e}")

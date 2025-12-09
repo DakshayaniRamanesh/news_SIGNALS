@@ -714,5 +714,55 @@ def run_pipeline(data_dir="data"):
     # Save final result
     output_path = os.path.join(data_dir, "final_data.csv")
     df.to_csv(output_path, index=False)
+    
+    # Save to history
+    save_to_history(df, data_dir)
+    
     logger.info(f"Pipeline completed. Data saved to {output_path}")
     return output_path
+
+def save_to_history(new_df, data_dir):
+    """Appends new unique items to a history JSON file."""
+    history_path = os.path.join(data_dir, "news_history.json")
+    import json
+    
+    existing_data = []
+    
+    # Load existing history
+    if os.path.exists(history_path):
+        try:
+            with open(history_path, 'r') as f:
+                existing_data = json.load(f)
+        except Exception as e:
+            logger.error(f"Error loading history file: {e}")
+            existing_data = []
+    
+    # Convert new data to dict list
+    # Ensure pandas timestamps are converted to strings
+    new_records = new_df.where(pd.notnull(new_df), None).to_dict(orient='records')
+    
+    # Create a set of existing unique IDs (Link + Title) to avoid duplicates
+    existing_keys = set((item.get('Link'), item.get('Title')) for item in existing_data)
+    
+    added_count = 0
+    for record in new_records:
+        key = (record.get('Link'), record.get('Title'))
+        if key not in existing_keys:
+            # Add a scraped_at timestamp for history
+            if 'scraped_at' not in record:
+                record['scraped_at'] = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            existing_data.append(record)
+            existing_keys.add(key)
+            added_count += 1
+            
+    # Save back to JSON
+    if added_count > 0:
+        try:
+            with open(history_path, 'w') as f:
+                json.dump(existing_data, f, indent=2, default=str)
+            logger.info(f"Added {added_count} new records to history.")
+        except Exception as e:
+            logger.error(f"Error saving history file: {e}")
+    else:
+        logger.info("No new records to add to history.")

@@ -203,3 +203,22 @@ def send_daily_reports(app_instance):
                         send_email_with_pdf(email, pdf_bytes, high_risk_count)
             except Exception as e:
                 print(f"Error processing subscriber line '{line.strip()}': {e}")
+
+def send_immediate_report(email):
+    """Sends the current report immediately to a specific email."""
+    print(f"Sending immediate report to {email}...")
+    
+    pdf_bytes = generate_pdf_report()
+    
+    if not pdf_bytes:
+        print("Failed to generate PDF for immediate report.")
+        return False
+
+    # Get stats for the body
+    try:
+        df = pd.read_csv(DATA_FILE)
+        high_risk_count = len(df[df['impact_level'] == 'High Risk'])
+    except:
+        high_risk_count = 0
+        
+    return send_email_with_pdf(email, pdf_bytes, high_risk_count)

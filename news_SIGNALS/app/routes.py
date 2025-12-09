@@ -57,6 +57,22 @@ def get_data():
     else:
         return jsonify([]), 200
 
+@main.route('/api/history')
+def get_history():
+    history_path = os.path.join(BASE_DIR, "data", "news_history.json")
+    if os.path.exists(history_path):
+        try:
+            # Serve the static JSON file directly effectively
+            with open(history_path, 'r') as f:
+                import json
+                data = json.load(f)
+            return jsonify(data)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    else:
+        # If no history exists yet, fallback to current data or empty
+        return jsonify([]), 200
+
 @main.route('/api/stats')
 def get_stats():
     if os.path.exists(DATA_FILE):
@@ -284,8 +300,12 @@ def subscribe():
                     f.write(f"{datetime.now()},{email},{notifications},{report}\n")
 
                 # Send confirmation email
-                from app.services.email_service import send_confirmation_email
+                from app.services.email_service import send_confirmation_email, send_immediate_report
                 send_confirmation_email(email)
+
+                # If user opted for reports, send the latest one immediately
+                if report:
+                    send_immediate_report(email)
 
                 # Redirect with success status to show confirmation screen
                 return redirect(url_for('main.subscribe', status='success'))

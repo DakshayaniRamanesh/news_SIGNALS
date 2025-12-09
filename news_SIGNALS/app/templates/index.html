@@ -3,6 +3,17 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+<div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1rem; padding: 0 1rem;">
+    <div class="toggle-container" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.05); padding: 5px 10px; border-radius: 20px; border: 1px solid var(--border);">
+        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Live</span>
+        <label class="switch" style="position: relative; display: inline-block; width: 40px; height: 20px;">
+            <input type="checkbox" id="history-toggle">
+            <span class="slider round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--accent); transition: .4s; border-radius: 34px;"></span>
+        </label>
+        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">History</span>
+    </div>
+</div>
+
 <section class="stats-grid">
     <div class="card stat-card">
         <div class="icon-box risk"><i class="fa-solid fa-triangle-exclamation"></i></div>

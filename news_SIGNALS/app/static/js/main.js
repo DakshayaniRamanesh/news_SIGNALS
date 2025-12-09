@@ -8,12 +8,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNotifications();
     setInterval(updateClock, 1000);
 
-    // Refresh every 30 seconds
+    // Refresh every 15 seconds
     setInterval(() => {
         fetchStats();
         fetchData();
         updateNotifications();
-    }, 30000);
+        if (typeof fetchMarketData === 'function' && currentMarketType) {
+            fetchMarketData(currentMarketType);
+        }
+    }, 15000);
 
     // Modal Close Handler
     document.querySelector('.close-modal').addEventListener('click', () => {
