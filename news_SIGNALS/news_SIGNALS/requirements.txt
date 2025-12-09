@@ -1,0 +1,12 @@
+flask
+apscheduler
+pandas
+feedparser
+sentence-transformers
+scikit-learn
+nltk
+numpy
+requests
+beautifulsoup4
+spacy
+xhtml2pdf
