@@ -534,18 +534,60 @@ h1 {
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
+    /* Prevent body scroll, handle in content */
     background-color: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
-    padding-top: 50px;
-    padding-bottom: 50px;
+    /* Flex centering works if we change JS, but relying on margin auto is safer for existing JS 'block' toggle */
+    /* We'll use a flex container approach but need to ensure JS display='block' doesn't break it. 
+       Actually, if JS sets display:block, we can't use flex on .modal easily.
+       Let's use the padding approach to center or just margin on content.
+    */
+    padding-top: 0;
+    padding-bottom: 0;
+    display: flex;
+    /* This will be overridden by JS inline style, so we should rely on content margin if preserving JS */
+    /* REVERTING to block-friendly centering for safety with existing JS */
+}
+
+/* We need to override the JS 'display: block' with !important or just handle it. 
+   Simplest fix without touching JS: 
+   Let modal be the container. 
+*/
+.modal {
+    display: none;
+    /* hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    /* Fallback */
+    background-color: rgba(0, 0, 0, 0.8);
+    /* Slightly darker */
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
 .modal-content {
     background: #1c1c1e;
     border-radius: 24px;
     border: 1px solid var(--border);
+    margin: 5vh auto;
+    /* Center vertically and horizontally */
+    padding: 32px;
+    width: 90%;
+    max-width: 700px;
+    /* Limit width */
+    max-height: 85vh;
+    /* Limit height */
+    overflow-y: auto;
+    /* Internal scroll */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    position: relative;
 }
 
 .close-modal {

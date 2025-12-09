@@ -241,6 +241,11 @@ function openDetailModal(type) {
     const body = document.getElementById('modal-body');
 
     modal.style.display = 'block';
+
+    // Reset scroll position
+    const content = modal.querySelector('.modal-content');
+    if (content) content.scrollTop = 0;
+
     body.innerHTML = '';
 
     let items = [];
