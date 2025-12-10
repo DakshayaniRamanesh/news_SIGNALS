@@ -320,7 +320,7 @@ async function fetchExternalHistory(start, end, hasLocalData) {
         const response = await fetch('/api/scrape_history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ start: start, end: end })
+            body: JSON.stringify({ start: start, end: end, query: "ALL" })
         });
 
         if (!response.ok) throw new Error('Scraping failed');

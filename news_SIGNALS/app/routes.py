@@ -82,12 +82,13 @@ def scrape_history_endpoint():
         return jsonify({"error": "Invalid JSON or Content-Type"}), 400
     start = data.get('start')
     end = data.get('end')
+    query = data.get('query', 'Sri Lanka')
     
     if not start or not end:
         return jsonify({"error": "Missing start or end date"}), 400
         
     try:
-        results = scrape_historical_data(start, end)
+        results = scrape_historical_data(start, end, query=query)
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

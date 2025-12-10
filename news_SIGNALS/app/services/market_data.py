@@ -8,7 +8,10 @@ from app.services.proxy_manager import proxy_manager
 
 logger = logging.getLogger(__name__)
 
-MARKET_DATA_FILE = "data/market_history.json"
+import os
+# Resolve absolute path for data persistence
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+MARKET_DATA_FILE = os.path.join(BASE_DIR, "data", "market_history.json")
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

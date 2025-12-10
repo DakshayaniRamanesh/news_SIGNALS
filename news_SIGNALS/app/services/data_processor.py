@@ -42,7 +42,13 @@ RSS_FEEDS = {
     "Dinamina": "https://www.dinamina.lk/rss",
     "Silumina": "https://www.silumina.lk/rss",
     "Thinakaran": "https://www.thinakaran.lk/rss",
-    "Virakesari": "https://www.virakesari.lk/rss"
+    "Virakesari": "https://www.virakesari.lk/rss",
+    "Hiru News": "https://www.hirunews.lk/rss/english.xml",
+    "Colombo Page": "http://www.colombopage.com/rss.xml",
+    "Lanka News Web": "https://lankanewsweb.net/feed/",
+    "News First": "https://www.newsfirst.lk/feed/",
+    "Asian Mirror": "https://asianmirror.lk/feed",
+    "Sri Lanka Guardian": "https://slguardian.org/feed/"
 }
 
 LEXICON = {
@@ -596,16 +602,58 @@ def tag_ops(text):
                 break
     return ", ".join(tags) if tags else "general"
 
-def run_pipeline(data_dir="data"):
+def run_pipeline(data_dir=None):
+    if data_dir is None:
+        # Default to absolute 'data' path
+        BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        data_dir = os.path.join(BASE_DIR, "data")
     logger.info("Starting pipeline execution...")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
     rows = []
-    for source, url in RSS_FEEDS.items():
+    # Random User-Agents to rotate
+    USER_AGENTS = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
+    ]
+
+    import time
+    import random
+    import requests
+    from io import BytesIO
+
+    rows = []
+    shuffled_feeds = list(RSS_FEEDS.items())
+    random.shuffle(shuffled_feeds) # Shuffle to avoid hitting same domain sequentially if grouped
+
+    for source, url in shuffled_feeds:
         try:
-            feed = feedparser.parse(url)
-            for e in feed.entries[:50]:
+            # Respectful scraping delay (1-3 seconds)
+            time.sleep(random.uniform(1.0, 3.0))
+            
+            headers = {
+                "User-Agent": random.choice(USER_AGENTS),
+                "Accept": "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
+                "Referer": "https://www.google.com/" 
+            }
+            
+            # Fetch with requests first to control headers/timeout
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            
+            # Parse the content
+            feed = feedparser.parse(BytesIO(response.content))
+            
+            # Increased limit to 150 items per source to get more history
+            entries = feed.entries[:150]
+            if not entries:
+                logger.warning(f"Source {source} returned 0 entries.")
+
+            for e in entries:
                 rows.append([
                     source,
                     e.get("title", ""),
@@ -614,6 +662,7 @@ def run_pipeline(data_dir="data"):
                     e.get("published", ""),
                     SEO_PRIORITY.get(source, 1)
                 ])
+                
         except Exception as err:
             logger.error(f"Error fetching {source}: {err}")
 
@@ -621,17 +670,54 @@ def run_pipeline(data_dir="data"):
         logger.warning("No data fetched.")
         return
 
-    df = pd.DataFrame(rows, columns=["Source", "Title", "Link", "Summary", "Published", "SEO_Score"])
+    new_df = pd.DataFrame(rows, columns=["Source", "Title", "Link", "Summary", "Published", "SEO_Score"])
     
     # Process the dataframe using the shared logic
-    df = process_articles(df)
+    new_df = process_articles(new_df)
     
-    # Save final result
     output_path = os.path.join(data_dir, "final_data.csv")
-    df.to_csv(output_path, index=False)
     
-    # Save to history
-    save_to_history(df, data_dir)
+    # 1. Load Existing Data (to ensure we don't lose today's earlier scrapes)
+    if os.path.exists(output_path):
+        try:
+            existing_df = pd.read_csv(output_path)
+            full_df = pd.concat([existing_df, new_df], ignore_index=True)
+            full_df = full_df.drop_duplicates(subset=["Link", "Title"])
+        except Exception as e:
+            logger.error(f"Error reading existing CSV: {e}")
+            full_df = new_df
+    else:
+        full_df = new_df
+
+    # 2. Save EVERYTHING to news_history.json (The Master Archive)
+    # This ensures that even as we wipe final_data.csv, nothing is lost forever.
+    save_to_history(full_df, data_dir)
+    
+    # 3. Filter final_data.csv to keep TODAY'S data only (The Live View)
+    try:
+        from datetime import datetime, timedelta, timezone
+        
+        # Parse dates (UTC)
+        full_df['dt_temp'] = pd.to_datetime(full_df['Published'], utc=True, errors='coerce')
+        
+        # Calculate Sri Lanka Date (UTC + 5:30)
+        utc_now = datetime.now(timezone.utc)
+        lk_now = utc_now + timedelta(hours=5, minutes=30)
+        today_date = lk_now.date()
+        
+        # Map row dates to LK time
+        full_df['lk_date'] = (full_df['dt_temp'] + pd.Timedelta(hours=5.5)).dt.date
+        
+        # Filter: Keep only rows matching today's date
+        today_df = full_df[full_df['lk_date'] == today_date].copy()
+        today_df = today_df.drop(columns=['dt_temp', 'lk_date'])
+        
+        logger.info(f"Daily Rotation: Keeping {len(today_df)} records for Today ({today_date}). Archived rest to history.")
+        today_df.to_csv(output_path, index=False)
+        
+    except Exception as e:
+        logger.error(f"Date filtering failed (saving all data as fallback): {e}")
+        full_df.to_csv(output_path, index=False)
     
     logger.info(f"Pipeline completed. Data saved to {output_path}")
     return output_path

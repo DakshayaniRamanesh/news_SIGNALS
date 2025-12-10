@@ -56,9 +56,29 @@ SRI_LANKA_LOCATIONS = {
     "Kotte": {"lat": 6.8970, "lon": 79.9048, "count": 0},
     "Tangalle": {"lat": 6.0240, "lon": 80.7946, "count": 0},
     "Mirissa": {"lat": 5.9482, "lon": 80.4716, "count": 0},
+    "Arugam Bay": {"lat": 6.8415, "lon": 81.8340, "count": 0},
+    "Pasikudah": {"lat": 7.9238, "lon": 81.5656, "count": 0},
+    "Kalpitiya": {"lat": 8.2295, "lon": 79.7596, "count": 0},
+    "Beliatta": {"lat": 6.0396, "lon": 80.7500, "count": 0},
+    "Ja-Ela": {"lat": 7.0766, "lon": 79.8906, "count": 0},
+    "Wattala": {"lat": 6.9897, "lon": 79.8906, "count": 0},
+    "Panadura": {"lat": 6.7114, "lon": 79.9079, "count": 0},
+    "Horana": {"lat": 6.7169, "lon": 80.0637, "count": 0},
+    "Piliyandala": {"lat": 6.8018, "lon": 79.9227, "count": 0},
+    "Maharagama": {"lat": 6.8480, "lon": 79.9265, "count": 0},
+    "Homagama": {"lat": 6.8412, "lon": 80.0030, "count": 0},
+    "Avissawella": {"lat": 6.9543, "lon": 80.2046, "count": 0},
+    "Kegalle": {"lat": 7.2513, "lon": 80.3464, "count": 0},
+    "Balangoda": {"lat": 6.6481, "lon": 80.7011, "count": 0},
+    "Bandarawela": {"lat": 6.8258, "lon": 80.9982, "count": 0},
+    "Haputale": {"lat": 6.7694, "lon": 80.9576, "count": 0}
 }
 
-DATA_FILE = os.path.join("data", "final_data.csv")
+import os
+
+# Resolve absolute path
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+DATA_FILE = os.path.join(BASE_DIR, "data", "final_data.csv")
 
 # Global NLP model instance
 nlp_model = None
@@ -70,10 +90,17 @@ def load_nlp_model():
     if nlp_model is None:
         try:
             nlp_model = spacy.load("en_core_web_sm")
-            logger.info("spaCy model loaded successfully")
+            logger.info("spaCy model 'en_core_web_sm' loaded successfully")
         except OSError:
-            logger.error("spaCy model 'en_core_web_sm' not found. Please run: python -m spacy download en_core_web_sm")
-            raise
+            logger.error("spaCy model 'en_core_web_sm' not found. Attempting to download...")
+            try:
+                from spacy.cli import download
+                download("en_core_web_sm")
+                nlp_model = spacy.load("en_core_web_sm")
+                logger.info("spaCy model downloaded and loaded.")
+            except Exception as e:
+                logger.critical(f"Failed to download/load spaCy model: {e}")
+                raise
     return nlp_model
 
 

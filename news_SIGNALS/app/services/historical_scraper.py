@@ -10,74 +10,97 @@ logger = logging.getLogger(__name__)
 def scrape_historical_data(start_date, end_date, query="Sri Lanka"):
     """
     Scrapes historical news from Google News RSS for the given date range.
-    
-    Args:
-        start_date (str): YYYY-MM-DD
-        end_date (str): YYYY-MM-DD
-        query (str): Search query
-        
-    Returns:
-        list: Processed news items as a list of dictionaries.
+    Now supports scraping multiple topics if query is 'ALL' or a list.
     """
-    # Construct Google News RSS URL
-    # Format: https://news.google.com/rss/search?q={query}+after:{start}+before:{end}&hl=en-LK&gl=LK&ceid=LK:en
+    import time
+    import random
+    
+    # If query is special flag "ALL", use a broad list of keywords to maximize data
+    queries = []
+    if query == "ALL":
+        queries = [
+            "Sri Lanka", 
+            "Colombo", 
+            "Sri Lanka Economy", 
+            "Sri Lanka Politics", 
+            "Sri Lanka Crime",
+            "Sri Lanka Weather",
+            "Sri Lanka Sports",
+            "Sri Lanka Tourism"
+        ]
+    elif isinstance(query, list):
+        queries = query
+    else:
+        queries = [query]
+        
+    all_rows = []
     base_url = "https://news.google.com/rss/search"
-    search_query = f"{query} after:{start_date} before:{end_date}"
     
-    params = {
-        "q": search_query,
-        "hl": "en-LK",
-        "gl": "LK",
-        "ceid": "LK:en"
-    }
-    
-    logger.info(f"Scraping historical data for query: {search_query}")
-    
-    try:
-        # distinct User-Agent to avoid blocking
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    # distinct User-Agent to avoid blocking
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0"
+    ]
+
+    for q in queries:
+        search_query = f"{q} after:{start_date} before:{end_date}"
+        
+        params = {
+            "q": search_query,
+            "hl": "en-LK",
+            "gl": "LK",
+            "ceid": "LK:en"
         }
         
-        response = requests.get(base_url, params=params, headers=headers)
-        response.raise_for_status()
+        logger.info(f"Scraping historical data for query: {search_query}")
         
-        feed = feedparser.parse(io.BytesIO(response.content))
-        
-        if not feed.entries:
-            logger.info("No entries found in Google News RSS for this period.")
-            return []
+        try:
+            # Random delay between queries
+            time.sleep(random.uniform(2.0, 5.0))
             
-        rows = []
-        for e in feed.entries:
-            # Google News items often don't have a simple summary, sometimes it's in description
-            summary = e.get("description", "")
-            # Clean up Google's specific html in description if needed, or leave for data_processor
+            headers = {"User-Agent": random.choice(user_agents)}
             
-            rows.append({
-                "Source": e.get("source", {}).get("title", "Google News"),
-                "Title": e.get("title", ""),
-                "Link": e.get("link", ""),
-                "Summary": summary,
-                "Published": e.get("published", ""),
-                "SEO_Score": 5.0 # Default score for external fetched
-            })
+            response = requests.get(base_url, params=params, headers=headers, timeout=20)
+            response.raise_for_status()
             
-        if not rows:
-            return []
+            feed = feedparser.parse(io.BytesIO(response.content))
             
-        # Convert to DataFrame
-        df = pd.DataFrame(rows)
-        
-        # Process using the existing robust pipeline
-        processed_df = process_articles(df)
-        
-        # Save to history so we don't need to scrape again
-        save_to_history(processed_df, "data")
-        
-        # Return as list of dicts for the API
-        return processed_df.to_dict(orient="records")
-        
-    except Exception as e:
-        logger.error(f"Error during historical scraping: {e}")
+            if not feed.entries:
+                logger.info(f"No entries found for {q}")
+                continue
+                
+            logger.info(f"Found {len(feed.entries)} entries for {q}")
+            
+            for e in feed.entries:
+                summary = e.get("description", "")
+                all_rows.append({
+                    "Source": e.get("source", {}).get("title", "Google News"),
+                    "Title": e.get("title", ""),
+                    "Link": e.get("link", ""),
+                    "Summary": summary,
+                    "Published": e.get("published", ""),
+                    "SEO_Score": 5.0
+                })
+                
+        except Exception as e:
+            logger.error(f"Error scraping query {q}: {e}")
+            continue
+
+    if not all_rows:
         return []
+        
+    # Remove duplicates based on Link
+    unique_rows = {v['Link']: v for v in all_rows}.values()
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(unique_rows)
+    
+    # Process using the existing robust pipeline
+    processed_df = process_articles(df)
+    
+    # Save to history
+    save_to_history(processed_df, "data")
+    
+    # Return as list of dicts
+    return processed_df.to_dict(orient="records")

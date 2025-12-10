@@ -8,8 +8,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-PROXY_CONFIG_FILE = "data/proxy_config.json"
-PROXY_LOG_FILE = "data/proxy_rotation.log"
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+PROXY_CONFIG_FILE = os.path.join(BASE_DIR, "data", "proxy_config.json")
+PROXY_LOG_FILE = os.path.join(BASE_DIR, "data", "proxy_rotation.log")
 
 # Reliable GitHub lists for free HTTP/HTTPS proxies
 GITHUB_PROXY_SOURCES = [
