@@ -16,7 +16,7 @@ def create_app():
     # In production with gunicorn, this might need a different approach (e.g. separate worker).
     # But for "industrial format" single app usage, this is fine.
     import os
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or os.environ.get("SCHEDULER_AUTOSTART") == "true":
         start_scheduler(app)
 
     return app
