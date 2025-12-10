@@ -17,10 +17,39 @@
 </div>
 {% endblock %}
 
+{% block modals %}
+<div id="detail-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 id="modal-title">Details</h2>
+        <div id="modal-body">
+            <!-- Content injected by JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const container = document.getElementById('clusters-container');
+
+        // Modal Elements
+        const modal = document.getElementById('detail-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const closeBtn = document.querySelector('.close-modal');
+
+        // Close Modal Logic
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
 
         try {
             const response = await fetch('/api/data');
@@ -41,11 +70,18 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.style.background = 'var(--bg-card)';
+                card.style.cursor = 'pointer'; // Make it look clickable
+                card.style.transition = 'var(--transition)';
 
-                // Find a representative title (e.g., the first one)
-                // Use the backend-generated cluster name if available, else fallback
+                // Hover effect
+                card.onmouseover = () => card.style.borderColor = 'var(--accent)';
+                card.onmouseout = () => card.style.borderColor = 'var(--border)';
+
+                // Find a representative title
                 const clusterName = items[0].cluster_name || `Cluster #${cid}`;
-                const title = items[0].Title;
+
+                // Logic to find the "best" title or just the first one
+                const mainArticle = items[0];
 
                 // Check for event flag
                 const isEvent = items.some(i => i.event_flag !== 'Normal');
@@ -56,18 +92,49 @@
                         <h3 style="font-size: 1.1rem; color: var(--accent);">${clusterName}</h3>
                         ${eventBadge}
                     </div>
-                    <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 10px; font-weight: 600;">${title}...</p>
-                    <p style="font-size: 0.8rem; color: var(--text-secondary);">${items.length} articles in this topic.</p>
-                    <div style="margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 0.8rem;">
-                        <ul style="padding-left: 1rem; color: var(--text-secondary);">
-                            ${items.slice(0, 5).map(i => `<li>${i.Source}: ${i.Title.substring(0, 50)}...</li>`).join('')}
-                        </ul>
+                    <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 10px; font-weight: 600;">${mainArticle.Title}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);"><i class="fa-solid fa-layer-group"></i> ${items.length} articles</span>
+                        <span style="font-size: 0.8rem; color: var(--accent); opacity: 0.8;">Tap to view <i class="fa-solid fa-arrow-right"></i></span>
                     </div>
                 `;
+
+                // Click Handler
+                card.addEventListener('click', () => {
+                    modalTitle.textContent = clusterName;
+                    modalBody.innerHTML = '';
+
+                    // Populate Modal with List
+                    items.forEach(item => {
+                        const div = document.createElement('div');
+                        div.style.cssText = 'padding: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem;';
+
+                        let badgeColor = '#64748b';
+                        if (item.impact_level === 'High Risk') badgeColor = '#ef4444';
+                        if (item.impact_level === 'Opportunity') badgeColor = '#22c55e';
+
+                        div.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">${item.Published || 'Recent'}</span>
+                                <span style="font-size: 0.75rem; background: ${badgeColor}20; color: ${badgeColor}; padding: 2px 8px; border-radius: 10px;">${item.impact_level}</span>
+                            </div>
+                            <div style="font-weight: 500; margin-bottom: 0.5rem; font-size: 1rem;">${item.Title}</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 0.5rem;">${item.Summary}</div>
+                            <div style="text-align: right;">
+                                <a href="${item.Link}" target="_blank" style="color: var(--accent); font-size: 0.85rem; text-decoration: none;">Read Source <i class="fa-solid fa-external-link-alt"></i></a>
+                            </div>
+                        `;
+                        modalBody.appendChild(div);
+                    });
+
+                    modal.style.display = 'block';
+                });
+
                 container.appendChild(card);
             });
 
         } catch (error) {
+            console.error(error);
             container.innerHTML = '<p>Error loading clusters.</p>';
         }
     });
