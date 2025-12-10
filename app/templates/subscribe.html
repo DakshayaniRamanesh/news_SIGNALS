@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Subscribe{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div style="max-width: 600px; margin: 0 auto; text-align: center; padding-top: 40px;">
+        <div style="margin-bottom: 30px;">
+            <i class="fa-solid fa-envelope-open-text" style="font-size: 3rem; color: var(--accent);"></i>
+        </div>
+
+        <h1 style="margin-bottom: 16px;">Stay Informed</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 40px; font-size: 1.1rem; line-height: 1.6;">
+            Subscribe to receive instant <strong>High Risk Notifications</strong> and our comprehensive
+            <strong>Daily Signal Report PDF</strong> directly to your inbox.
+        </p>
+
+        <div class="card" style="padding: 40px;">
+            {% if request.args.get('status') == 'success' %}
+            <div style="padding: 40px 20px; text-align: center;">
+                <div style="margin-bottom: 24px; color: var(--opportunity); font-size: 4rem;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h2 style="margin-bottom: 16px;">Subscribed!</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 32px;">
+                    You have successfully subscribed to our alerts.
+                </p>
+                <a href="{{ url_for('main.subscribe') }}" class="ios-btn"
+                    style="background: var(--bg-glass); border: 1px solid var(--border); display: inline-flex; justify-content: center;">
+                    <i class="fa-solid fa-plus" style="margin-right: 8px;"></i> Subscribe another email
+                </a>
+            </div>
+            {% elif request.args.get('status') == 'duplicate' %}
+            <div style="padding: 40px 20px; text-align: center;">
+                <div style="margin-bottom: 24px; color: #ff9f0a; font-size: 4rem;">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                </div>
+                <h2 style="margin-bottom: 16px;">Already Subscribed</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 32px;">
+                    This email address is already subscribed.
+                </p>
+                <a href="{{ url_for('main.subscribe') }}" class="ios-btn"
+                    style="background: var(--bg-glass); border: 1px solid var(--border); display: inline-flex; justify-content: center;">
+                    <i class="fa-solid fa-arrow-left" style="margin-right: 8px;"></i> Try another email
+                </a>
+            </div>
+            {% else %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div
+                style="margin-bottom: 24px; padding: 12px; border-radius: 12px; background: rgba(50, 215, 75, 0.1); color: var(--opportunity); border: 1px solid rgba(50, 215, 75, 0.2);">
+                <i class="fa-solid fa-check-circle"></i> {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('main.subscribe') }}" method="POST"
+                style="display: flex; flex-direction: column; gap: 20px;">
+                <div style="text-align: left;">
+                    <label for="email"
+                        style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 0.9rem;">Email
+                        Address</label>
+                    <input type="email" id="email" name="email" required placeholder="name@example.com"
+                        class="ios-input" style="width: 100%; padding: 16px; font-size: 1.1rem;">
+                </div>
+
+                <div style="text-align: left;">
+                    <label style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" name="notifications" checked
+                            style="accent-color: var(--accent); margin-top: 4px;">
+                        <span style="font-size: 0.95rem; color: var(--text-secondary);">
+                            Alert me immediately for <strong>High Risk</strong> events.
+                        </span>
+                    </label>
+                </div>
+
+                <div style="text-align: left;">
+                    <label style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" name="report" checked
+                            style="accent-color: var(--accent); margin-top: 4px;">
+                        <span style="font-size: 0.95rem; color: var(--text-secondary);">
+                            Send me the daily <strong>Signal Report</strong>.
+                        </span>
+                    </label>
+                </div>
+
+                <button type="submit" class="ios-btn"
+                    style="background: var(--accent); justify-content: center; padding: 16px; font-size: 1.1rem; margin-top: 20px;">
+                    Subscribe Now
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        <p style="margin-top: 32px; font-size: 0.8rem; color: var(--text-muted);">
+            We respect your privacy. Unsubscribe at any time.
+        </p>
+    </div>
+</div>
+{% endblock %}
