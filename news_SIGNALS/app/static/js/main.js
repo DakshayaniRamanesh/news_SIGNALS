@@ -265,6 +265,7 @@ function handleHistoryAnalyze() {
     const startStr = document.getElementById('hist-start-date').value;
     const endStr = document.getElementById('hist-end-date').value;
     const statusDiv = document.getElementById('hist-fetch-status');
+    const feed = document.getElementById('historical-feed-list');
 
     if (!startStr || !endStr) {
         alert('Please select a valid date range.');
@@ -273,7 +274,6 @@ function handleHistoryAnalyze() {
 
     const startDate = new Date(startStr);
     const endDate = new Date(endStr);
-    // Set end date to end of day
     endDate.setHours(23, 59, 59);
 
     if (statusDiv) {
@@ -281,42 +281,110 @@ function handleHistoryAnalyze() {
         statusDiv.textContent = '';
     }
 
-    // Filter Data
+    // 1. Filter Local Data
     const filtered = currentData.filter(d => {
         if (!d.Published) return false;
         const pubDate = new Date(d.Published);
         return pubDate >= startDate && pubDate <= endDate;
     });
 
-    if (filtered.length === 0) {
-        simulateExternalFetch(startStr, endStr);
-        updateHistoricalStats([]);
-        renderHistoricalFeed([]);
-        clearTrendChart();
-    } else {
+    // 2. Show local data eagerly if available
+    if (filtered.length > 0) {
         updateHistoricalStats(filtered);
         renderHistoricalFeed(filtered);
         calculateTrend(filtered);
     }
+
+    // 3. Always attempt to scrape more data for better coverage
+    fetchExternalHistory(startStr, endStr, filtered.length > 0);
 }
 
-function simulateExternalFetch(start, end) {
+async function fetchExternalHistory(start, end, hasLocalData) {
     const statusDiv = document.getElementById('hist-fetch-status');
     const feed = document.getElementById('historical-feed-list');
-    if (!statusDiv) return;
 
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = `<i class="fa-solid fa-satellite-dish fa-beat"></i> Scanning archives for ${start} to ${end}...`;
-    if (feed) feed.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted);"><div class="loading-sm"></div> Searching external databases...</div>';
+    // UI Loading State
+    if (statusDiv) {
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = hasLocalData
+            ? `<i class="fa-solid fa-sync fa-spin"></i> Updating archive with latest data from ${start} to ${end}...`
+            : `<i class="fa-solid fa-satellite-dish fa-beat"></i> Scraping external archives from ${start} to ${end}...`;
+    }
 
-    setTimeout(() => {
-        statusDiv.innerHTML = `<i class="fa-solid fa-server fa-fade"></i> No local data. Querying external news nodes...`;
+    // Only clear feed if we have no local data to show
+    if (feed && !hasLocalData) {
+        feed.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted);"><div class="loading-sm"></div> Accessing Global News Nodes...</div>';
+    }
 
-        setTimeout(() => {
-            statusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: var(--risk);"></i> External sources unreachable for this specific period.`;
-            if (feed) feed.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted);">No data found for this range. Try a more recent period (e.g., Dec 2025).</div>';
-        }, 2500);
-    }, 2000);
+    try {
+        const response = await fetch('/api/scrape_history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ start: start, end: end })
+        });
+
+        if (!response.ok) throw new Error('Scraping failed');
+
+        const newData = await response.json();
+
+        if (newData.length > 0) {
+            // Success
+            if (statusDiv) {
+                statusDiv.innerHTML = `<i class="fa-solid fa-check-circle" style="color: var(--success);"></i> Sync Complete. Found ${newData.length} records.`;
+                setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+            }
+
+            // Merge Data: Add only new items to currentData
+            // Use Link as unique key logic check
+            const existingLinks = new Set(currentData.map(d => d.Link));
+            let addedCount = 0;
+            newData.forEach(item => {
+                if (!existingLinks.has(item.Link)) {
+                    currentData.push(item);
+                    addedCount++;
+                }
+            });
+
+            // Re-Filter to show the full combined dataset for this range
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            endDate.setHours(23, 59, 59);
+
+            const combinedFiltered = currentData.filter(d => {
+                if (!d.Published) return false;
+                const pubDate = new Date(d.Published);
+                return pubDate >= startDate && pubDate <= endDate;
+            });
+
+            // Render
+            updateHistoricalStats(combinedFiltered);
+            renderHistoricalFeed(combinedFiltered);
+            calculateTrend(combinedFiltered);
+
+        } else {
+            // No new data found
+            if (statusDiv) {
+                statusDiv.innerHTML = hasLocalData
+                    ? `<i class="fa-solid fa-check"></i> Archive is up to date.`
+                    : `<i class="fa-solid fa-triangle-exclamation" style="color: var(--risk);"></i> No external records found for this period.`;
+                setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+            }
+            if (feed && !hasLocalData) {
+                feed.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted);">No data found in global archives.</div>';
+                clearTrendChart();
+                updateHistoricalStats([]);
+            }
+        }
+
+    } catch (error) {
+        console.error('External fetch error:', error);
+        if (statusDiv) {
+            statusDiv.innerHTML = `<i class="fa-solid fa-circle-xmark" style="color: var(--risk);"></i> Connection failed.`;
+        }
+        if (feed && !hasLocalData) {
+            feed.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted);">Failed to connect to external archives.</div>';
+        }
+    }
 }
 
 function updateHistoricalStats(data) {

@@ -622,6 +622,26 @@ def run_pipeline(data_dir="data"):
         return
 
     df = pd.DataFrame(rows, columns=["Source", "Title", "Link", "Summary", "Published", "SEO_Score"])
+    
+    # Process the dataframe using the shared logic
+    df = process_articles(df)
+    
+    # Save final result
+    output_path = os.path.join(data_dir, "final_data.csv")
+    df.to_csv(output_path, index=False)
+    
+    # Save to history
+    save_to_history(df, data_dir)
+    
+    logger.info(f"Pipeline completed. Data saved to {output_path}")
+    return output_path
+
+def process_articles(df):
+    """
+    Takes a raw DataFrame with columns [Source, Title, Link, Summary, Published, SEO_Score]
+    and applies cleaning, clustering, scoring, and tagging.
+    Returns the processed DataFrame.
+    """
     df = df.drop_duplicates(subset=["Title", "Link"])
     
     # Cleaning
@@ -687,6 +707,10 @@ def run_pipeline(data_dir="data"):
             
             # TF-IDF
             tfidf = TfidfVectorizer(stop_words='english', max_features=100)
+            # Handle empty case for fit_transform
+            if grouped['cleaned'].empty or grouped['cleaned'].str.strip().eq('').all():
+                 return {row['topic_cluster']: "General" for _, row in grouped.iterrows()}
+
             tfidf_matrix = tfidf.fit_transform(grouped['cleaned'])
             feature_names = np.array(tfidf.get_feature_names_out())
             
@@ -694,10 +718,13 @@ def run_pipeline(data_dir="data"):
             for i, row in grouped.iterrows():
                 cluster_id = row['topic_cluster']
                 # Get top 3 keywords
-                top_indices = tfidf_matrix[i].toarray().flatten().argsort()[::-1][:3]
-                keywords = feature_names[top_indices]
-                # Capitalize keywords
-                name = ", ".join([k.title() for k in keywords])
+                if tfidf_matrix.shape[1] > 0:
+                    top_indices = tfidf_matrix[i].toarray().flatten().argsort()[::-1][:3]
+                    keywords = feature_names[top_indices]
+                    # Capitalize keywords
+                    name = ", ".join([k.title() for k in keywords])
+                else: 
+                    name = "General"
                 cluster_names[cluster_id] = name
             
             return cluster_names
@@ -711,15 +738,7 @@ def run_pipeline(data_dir="data"):
         logger.error(f"Error generating cluster names: {e}")
         df["cluster_name"] = "Cluster " + df["topic_cluster"].astype(str)
 
-    # Save final result
-    output_path = os.path.join(data_dir, "final_data.csv")
-    df.to_csv(output_path, index=False)
-    
-    # Save to history
-    save_to_history(df, data_dir)
-    
-    logger.info(f"Pipeline completed. Data saved to {output_path}")
-    return output_path
+    return df
 
 def save_to_history(new_df, data_dir):
     """Appends new unique items to a history JSON file."""

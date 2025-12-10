@@ -7,6 +7,7 @@ import os
 import time
 from app.scheduler import refresh_now, update_interval, get_next_run_time, get_interval
 from app.services.data_processor import get_current_model_info, switch_model
+from app.services.historical_scraper import scrape_historical_data
 from app.services import market_data
 
 main = Blueprint('main', __name__)
@@ -72,6 +73,25 @@ def get_history():
     else:
         # If no history exists yet, fallback to current data or empty
         return jsonify([]), 200
+
+@main.route('/api/scrape_history', methods=['POST'])
+def scrape_history_endpoint():
+    print("DEBUG: /api/scrape_history hit")
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON or Content-Type"}), 400
+    start = data.get('start')
+    end = data.get('end')
+    
+    if not start or not end:
+        return jsonify({"error": "Missing start or end date"}), 400
+        
+    try:
+        results = scrape_historical_data(start, end)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @main.route('/api/stats')
 def get_stats():
@@ -283,7 +303,6 @@ def subscribe():
         if email:
             try:
                 # Check for duplicates
-                exists = False
                 exists = False
                 if os.path.exists(SUBSCRIBERS_FILE):
                     with open(SUBSCRIBERS_FILE, 'r') as f:
