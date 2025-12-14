@@ -364,3 +364,21 @@ def api_analyze_company():
         
     results = analyze_company_feasibility(name, sector, scale, investment, target_market, location, description, DATA_FILE)
     return jsonify(results)
+
+@main.route('/addons/stock-market')
+def stock_market_addon():
+    return render_template('addon_stock_market.html')
+
+@main.route('/api/addons/analyze-stock', methods=['POST'])
+def api_analyze_stock():
+    from app.services.addon_service import analyze_stock_market
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+        
+    horizon = data.get('horizon', 'long')
+    risk = data.get('risk', 'moderate')
+    focus_sector = data.get('focus_sector', 'all')
+    
+    results = analyze_stock_market(horizon, risk, focus_sector, DATA_FILE)
+    return jsonify(results)

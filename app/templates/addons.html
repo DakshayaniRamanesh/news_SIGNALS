@@ -33,6 +33,26 @@
                 </div>
             </div>
 
+            <!-- Stock Market Add-on Card -->
+            <div class="addon-card"
+                style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; transition: transform 0.2s, background 0.2s; cursor: pointer;"
+                onclick="window.location.href='{{ url_for('main.stock_market_addon') }}'">
+                <div class="addon-icon"
+                    style="background: #007aff; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <i class="fa-solid fa-chart-line" style="font-size: 24px; color: white;"></i>
+                </div>
+                <h3 style="margin-bottom: 10px;">Stock Market Advisor</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+                    CSE Investment signals based on news sentiment. Identify bullish stocks and sectors in Sri Lanka.
+                </p>
+                <div class="addon-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span
+                        style="font-size: 0.8rem; padding: 4px 12px; background: rgba(52, 199, 89, 0.2); color: #34c759; border-radius: 20px;">Active</span>
+                    <button class="ios-btn small">Open <i class="fa-solid fa-arrow-right"
+                            style="margin-left: 5px;"></i></button>
+                </div>
+            </div>
+
             <!-- Placeholder for future addons -->
             <div class="addon-card"
                 style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; opacity: 0.6;">

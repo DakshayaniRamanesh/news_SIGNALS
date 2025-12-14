@@ -1,9 +1,13 @@
-
 import pandas as pd
 import os
 import numpy as np
 from datetime import datetime, timedelta
 import re
+import requests
+from bs4 import BeautifulSoup
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Map user sectors to tags in our data
 SECTOR_MAP = {
@@ -106,6 +110,111 @@ def generate_suggestions(sector, risk_level, threats_df, opportunities_df, conte
         
     return list(set(suggestions))
 
+from urllib.parse import urljoin
+
+# --- Gazette Scraper ---
+def scrape_recent_gazettes():
+    """Scrapes specified gazette sites for recent PDF links."""
+    
+    urls = [
+        "https://www.gazette.lk/government-gazette",
+        "http://documents.gov.lk/en/gazette_extra.php" 
+    ]
+    
+    gazettes = []
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+
+    for url in urls:
+        try:
+            logger.info(f"Scraping gazettes from: {url}")
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                links = soup.find_all('a', href=True)
+                
+                count = 0
+                for link in links:
+                    href = link['href']
+                    text = link.get_text(strip=True)
+                    
+                    # Construct absolute URL safely
+                    full_link = urljoin(url, href)
+                    
+                    is_relevant = False
+                    # Check for PDF or Download keywords
+                    if "pdf" in href.lower() or "download" in text.lower():
+                        is_relevant = True
+                    # Check for gazette viewer links
+                    if "view" in href.lower() and "gazette" in href.lower():
+                        is_relevant = True
+                        
+                    if is_relevant and len(text) > 5:
+                        gazettes.append({
+                            "date": "Latest", 
+                            "title": text[:100], 
+                            "link": full_link,
+                            "source": "Gazette Source"
+                        })
+                        count += 1
+                        if count >= 8: break
+                        
+        except Exception as e:
+            logger.error(f"Failed to scrape {url}: {e}")
+            continue
+
+    return gazettes
+
+# --- Market News Scraper (On-Demand) ---
+def scrape_market_highlights():
+    """Scrapes latest market news for fresh stock signals."""
+    news_items = []
+    sources = [
+        "https://www.economynext.com/category/markets/",
+        "https://www.ft.lk/financial-services"
+    ]
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    for url in sources:
+        try:
+            response = requests.get(url, headers=headers, timeout=8)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # EconomyNext specific
+                if "economynext" in url:
+                    articles = soup.find_all('div', class_='story-grid-single-story')
+                    for art in articles[:10]:
+                        h3 = art.find('h3', class_='story-title')
+                        if h3:
+                            a_tag = h3.find('a')
+                            if a_tag:
+                                title = a_tag.get_text(strip=True)
+                                link = a_tag['href']
+                                news_items.append({'Title': title, 'Link': link, 'cleaned': title})
+                                
+                # FT.lk specific
+                elif "ft.lk" in url:
+                    # FT structure varies, generic approach
+                    divs = soup.find_all('div', class_='col-md-12') # Often used for lists
+                    for div in divs[:15]:
+                        a_tag = div.find('a', class_='t-title') # heuristic
+                        if not a_tag:
+                             # Try finding any headline
+                             h5 = div.find('h5')
+                             if h5: a_tag = h5.find('a')
+                             
+                        if a_tag:
+                            title = a_tag.get_text(strip=True)
+                            link = a_tag['href']
+                            if len(title) > 20: 
+                                news_items.append({'Title': title, 'Link': link, 'cleaned': title})
+                                
+        except Exception as e:
+            logger.error(f"Market scrape error for {url}: {e}")
+            
+    return pd.DataFrame(news_items)
+
 def analyze_company_feasibility(name, sector, scale, investment, target_market, location, description, data_file):
     if not os.path.exists(data_file):
         return {"error": "Data file not found"}
@@ -192,26 +301,26 @@ def analyze_company_feasibility(name, sector, scale, investment, target_market, 
         }
         suggestions = generate_suggestions(sector, risk_level, threats_df, opportunities_df, context)
 
-        # Gazette Search
-        reg_keywords = ["gazette", "parliament", "bill", "act", "regulation", "ministry", "policy", "circular"]
-        reg_pattern = '|'.join(reg_keywords)
-        reg_df = df[df['cleaned'].str.contains(reg_pattern, case=False, na=False)]
+        # Scrape Gazettes (Live Check)
+        gazette_list = scrape_recent_gazettes()
         
-        # Filter for Sector OR Location relevant gazettes
-        reg_matches = reg_df[reg_df['cleaned'].str.contains('|'.join(tags) if tags else 'economic', case=False, na=False)]
-
-        gazette_list = []
-        for _, row in reg_matches.head(10).iterrows():
-            gazette_list.append({
-                "date": row.get('Published', 'Unknown Date'),
-                "title": row.get('Title', 'No Title'),
-                "link": row.get('Link', '#')
-            })
+        # If scraper found nothing, falling back to internal dataset search for history
+        if not gazette_list or len(gazette_list) < 2:
+             reg_keywords = ["gazette", "parliament", "bill", "act", "regulation"]
+             reg_pattern = '|'.join(reg_keywords)
+             # Use original large DF
+             reg_df = df[df['cleaned'].str.contains(reg_pattern, case=False, na=False)]
+             reg_matches = reg_df[reg_df['cleaned'].str.contains('|'.join(tags) if tags else 'economic', case=False, na=False)]
+             for _, row in reg_matches.head(5).iterrows():
+                gazette_list.append({
+                    "date": row.get('Published', 'Archive'),
+                    "title": row.get('Title', 'No Title'),
+                    "link": row.get('Link', '#')
+                })
 
         # Advanced AI Report Text
         report_text = f"**Feasibility Assessment for {name}**\n"
-        report_text += f"**Scenario**: {scale.title()} scale entity in {location.title()}, focused on {target_market} market.\n"
-        report_text += f"**Sector**: {sector.title()} | Data Points: {len(relevant_df)}\n\n"
+        report_text += f"**Scenario**: {scale.title()} scale entity in {location.title()}.\n"
         
         report_text += "### Market Conditions\n"
         if avg_sentiment > 0.1:
@@ -257,6 +366,193 @@ def analyze_company_feasibility(name, sector, scale, investment, target_market, 
                 }
             }
         }
-
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(f"Feasibility error: {e}", exc_info=True)
+        return {"error": f"Analysis failed: {str(e)}"}
+
+
+# --- Stock Market Add-on Logic ---
+
+CSE_COMPANIES = {
+    "JKH": ["John Keells", "JKH", "Keells"],
+    "SAMP": ["Sampath Bank", "Sampath"],
+    "COMB": ["Commercial Bank", "ComBank"],
+    "HNB": ["Hatton National Bank", "HNB"],
+    "DIAL": ["Dialog Axiata", "Dialog"],
+    "SLTL": ["Sri Lanka Telecom", "SLT"],
+    "HAYL": ["Hayleys"],
+    "EXPO": ["Expolanka"],
+    "LOLC": ["LOLC"],
+    "DIST": ["Distilleries"],
+    "CARG": ["Cargills"],
+    "LION": ["Lion Brewery"],
+    "CHEV": ["Chevron Lubricants"],
+    "SUN": ["Sunshine Holdings"],
+    "TKYO": ["Tokyo Cement"],
+    "RCL": ["Royal Ceramics"],
+    "AEL": ["Access Engineering"],
+    "MELS": ["Melstacorp"]
+}
+
+STOCK_KEYWORDS = ["cse", "colombo stock exchange", "share market", "bourse", "equity", "dividend", "earning", "profit", "loss", "ipo", "rights issue", "stock"]
+
+# Map frontend values to SECTOR_MAP keys
+STOCK_SECTOR_MAPPING = {
+    "Bank": "economic",
+    "Material": "manufacturing",
+    "Food Beve": "agriculture", 
+    "Cap Goods": "construction",
+    "Utility": "energy",
+    "Telecom": "technology",
+    "Consumer": "tourism" # Approximate
+}
+
+def analyze_stock_market(horizon, risk, focus_sector, data_file):
+    # Always try to scrape fresh market news first
+    fresh_news_df = scrape_market_highlights()
+    
+    df = pd.DataFrame()
+    if os.path.exists(data_file):
+        try:
+            df = pd.read_csv(data_file)
+        except: pass
+        
+    if not fresh_news_df.empty:
+        # Normalize columns if needed
+        # We need 'Title', 'Link', 'cleaned'
+        # Assign basic sentiment to fresh news if missing (simple keyword check)
+        fresh_news_df['sentiment_score'] = 0
+        fresh_news_df['operational_tag'] = 'economic'
+        fresh_news_df['impact_score'] = 1
+        
+        # Simple sentiment tagging for fresh news
+        for i, row in fresh_news_df.iterrows():
+            text = str(row['Title']).lower()
+            score = 0
+            if any(w in text for w in ['gain', 'up', 'higher', 'green', 'bull', 'profit', 'rise']): score += 0.5
+            if any(w in text for w in ['loss', 'down', 'lower', 'red', 'bear', 'crash', 'drop']): score -= 0.5
+            fresh_news_df.at[i, 'sentiment_score'] = score
+
+        df = pd.concat([fresh_news_df, df], ignore_index=True)
+
+    if df.empty:
+        return {"error": "No market data available (scrapers failed and local data missing)."}
+        
+    try:
+        # 1. Filter Overall Market News
+        # Pattern matching for ANY stock keywords
+        stock_pattern = '|'.join(STOCK_KEYWORDS)
+        # Use na=False to handle potential NaNs
+        market_news = df[df['cleaned'].str.contains(stock_pattern, case=False, na=False)]
+        
+        # If market_news is too sparse, fallback to all fresh news
+        if len(market_news) < 5 and not fresh_news_df.empty:
+             market_news = pd.concat([market_news, fresh_news_df]).drop_duplicates()
+
+        market_sentiment = get_weighted_sentiment(market_news)
+        market_sentiment_str = f"{market_sentiment:.2f} (Neutral)"
+        if market_sentiment > 0.2: market_sentiment_str = f"{market_sentiment:.2f} (Bullish)"
+        elif market_sentiment < -0.2: market_sentiment_str = f"{market_sentiment:.2f} (Bearish)"
+        
+        # 2. Analyze Specific Company Mentions
+        stock_picks = []
+        for ticker, aliases in CSE_COMPANIES.items():
+            pattern = '|'.join(aliases)
+            # Find news mentioning this company
+            company_df = df[df['cleaned'].str.contains(pattern, case=False, na=False)]
+            
+            if not company_df.empty:
+                # Top headline
+                best_row = company_df.iloc[0]
+                headline = best_row['Title']
+                score = best_row.get('sentiment_score', 0)
+                
+                # Signal Logic
+                signal = "Hold"
+                if score > 0.1: signal = "Buy"
+                elif score < -0.1: signal = "Sell"
+                
+                if risk == "conservative" and signal == "Buy" and score < 0.4:
+                    signal = "Hold"
+                
+                stock_picks.append({
+                    "name": f"{ticker} ({aliases[0]})",
+                    "sentiment": round(score, 2),
+                    "headline": headline,
+                    "signal": signal,
+                    "ticker": ticker
+                })
+        
+        stock_picks.sort(key=lambda x: x['sentiment'], reverse=True)
+        
+        # 3. Sector Performance
+        sector_perf = []
+        top_sector_name = "N/A"
+        top_sector_score = -99
+        
+        mapped_focus = STOCK_SECTOR_MAPPING.get(focus_sector, 'all')
+        if focus_sector == 'all':
+            target_sectors = SECTOR_MAP.keys()
+        else:
+             target_sectors = [mapped_focus] if mapped_focus in SECTOR_MAP else []
+
+        for sec in target_sectors:
+            tags = SECTOR_MAP.get(sec, [])
+            if tags:
+                pat = '|'.join(tags)
+                sec_df = df[df['operational_tag'].str.contains(pat, case=False, na=False)]
+                score = get_weighted_sentiment(sec_df)
+                sector_perf.append({"sector": sec.title(), "score": round(score, 2)})
+                
+                if score > top_sector_score:
+                    top_sector_score = score
+                    top_sector_name = sec.title()
+        
+        # 4. Strategy Report
+        action = "Accumulate" if market_sentiment > 0.1 else ("Stay Cash" if market_sentiment < -0.2 else "Hold")
+        
+        report = f"**Market Outlook ({horizon.title()} Term)**\n"
+        report += f"The CSE shows a **{market_sentiment_str}** sentiment trend. "
+        
+        if market_sentiment > 0.1:
+            report += "News flow suggests optimism. "
+        elif market_sentiment < -0.1:
+            report += "Negative sentiment prevails. "
+            
+        report += f"\n\n**Top Performing Sector**: {top_sector_name}\n"
+        
+        if risk == "conservative":
+            report += "\n\n**Risk Note**: Given your conservative profile, focus on blue-chip stocks with high dividends (e.g. Banking, Telecom)."
+        elif risk == "aggressive":
+             report += "\n\n**Risk Note**: Aggressive strategy suggests looking for undervalued 'turnaround' plays."
+
+        # 5. Events
+        events = []
+        event_keywords = {"dividend": "Dividend Declared", "rights issue": "Rights Issue", "earning": "Earnings Report", "agm": "AGM", "ipo": "IPO"}
+        
+        # Search primarily in fresh/market news
+        search_pool = market_news if not market_news.empty else df.head(100)
+        
+        for _, row in search_pool.iterrows():
+            txt = str(row.get('cleaned', '')).lower()
+            for k, v in event_keywords.items():
+                if k in txt:
+                    # Try to extract Likely Company? or just list headline
+                    events.append({"company": "News", "type": f"{v}: {str(row.get('Title',''))[:60]}..."})
+                    break
+            if len(events) >= 5: break
+
+        return {
+            "market_sentiment": market_sentiment,
+            "market_sentiment_str": market_sentiment_str,
+            "top_sector": top_sector_name,
+            "recommended_action": action,
+            "strategy_report": report,
+            "stock_picks": stock_picks, 
+            "sector_performance": sector_perf,
+            "events": events
+        }
+        
+    except Exception as e:
+        logger.error(f"Stock analysis error: {e}", exc_info=True)
+        return {"error": f"Analysis Error: {str(e)}"}
