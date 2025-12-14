@@ -1,10 +1,6 @@
 {
   "usd_lkr": [
     {
-      "date": "2025-11-11",
-      "value": 308.34
-    },
-    {
       "date": "2025-11-12",
       "value": 307.8
     },
@@ -119,13 +115,13 @@
     {
       "date": "2025-12-10",
       "value": 308.39
+    },
+    {
+      "date": "2025-12-14",
+      "value": 308.97
     }
   ],
   "gold": [
-    {
-      "date": "2025-11-11",
-      "value": 41612.49
-    },
     {
       "date": "2025-11-12",
       "value": 41986.9
@@ -241,17 +237,13 @@
     {
       "date": "2025-12-10",
       "value": 41796.97
+    },
+    {
+      "date": "2025-12-14",
+      "value": 42730.03
     }
   ],
   "fuel": [
-    {
-      "date": "2025-11-11",
-      "values": {
-        "Lanka Petrol 92 Octane": 294.0,
-        "Lanka Petrol 95 Octane Euro 4": 335.0,
-        "Lanka Auto Diesel": 277.0
-      }
-    },
     {
       "date": "2025-11-12",
       "values": {
@@ -495,13 +487,23 @@
         "Lanka Fuel Oil 1500 Sec. (High Sulphur)": 194.0,
         "Lanka Fuel Oil 1500 Sec. (Low Sulphur)": 194.0
       }
+    },
+    {
+      "date": "2025-12-14",
+      "values": {
+        "Lanka Petrol 92 Octane": 294.0,
+        "Lanka Auto Diesel": 277.0,
+        "Lanka Kerosene": 180.0,
+        "Lanka Petrol 95 Octane Euro 4": 335.0,
+        "Lanka Super Diesel 4 Star Euro 4": 318.0,
+        "Lanka Industrial Kerosene": 193.0,
+        "Lanka Fuel Oil Super": 194.0,
+        "Lanka Fuel Oil 1500 Sec. (High Sulphur)": 194.0,
+        "Lanka Fuel Oil 1500 Sec. (Low Sulphur)": 194.0
+      }
     }
   ],
   "inflation": [
-    {
-      "date": "2025-11-11",
-      "value": 145.1
-    },
     {
       "date": "2025-11-12",
       "value": 145.15
@@ -616,6 +618,10 @@
     },
     {
       "date": "2025-12-10",
+      "value": 147.088
+    },
+    {
+      "date": "2025-12-14",
       "value": 147.088
     }
   ]
