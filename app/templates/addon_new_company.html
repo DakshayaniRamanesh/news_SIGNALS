@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}New Company Feasibility{% endblock %}
+{% block header_title %}New Company Analysis{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Input Section -->
+    <div class="glass-panel" style="margin-bottom: 24px;">
+        <h3 style="margin-bottom: 20px;"><i class="fa-solid fa-rocket"
+                style="margin-right: 10px; color: var(--primary);"></i>Setup New Entity</h3>
+        <form id="analysis-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Company Name</label>
+                <input type="text" id="company_name" class="ios-input" placeholder="e.g. EcoGreen Logistics" required
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+            </div>
+
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Sector /
+                    Industry</label>
+                <select id="sector" class="ios-input" required
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                    <option value="" disabled selected>Select Sector</option>
+                    <option value="energy">Energy & Power</option>
+                    <option value="transport">Transport & Logistics</option>
+                    <option value="health">Healthcare & Pharmaceuticals</option>
+                    <option value="economic">Finance & Banking</option>
+                    <option value="technology">Technology & IT</option>
+                    <option value="construction">Construction & Real Estate</option>
+                    <option value="tourism">Tourism & Hospitality</option>
+                    <option value="agriculture">Agriculture & Food</option>
+                    <option value="retail">Retail & Consumer Goods</option>
+                    <option value="manufacturing">Manufacturing (General)</option>
+                    <option value="education">Education & Training</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Scale of
+                    Operation</label>
+                <select id="scale" class="ios-input"
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                    <option value="micro">Micro (Home based / Individual)</option>
+                    <option value="small">Small Enterprise (SME)</option>
+                    <option value="medium">Medium Enterprise</option>
+                    <option value="large">Large Corporate / Industrial</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Investment Budget
+                    (LKR)</label>
+                <select id="investment" class="ios-input"
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                    <option value="low">Less than 1 Million</option>
+                    <option value="mid">1 Million - 10 Million</option>
+                    <option value="high">10 Million - 50 Million</option>
+                    <option value="very_high">Above 50 Million</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Target Market
+                    Focus</label>
+                <select id="target_market" class="ios-input"
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                    <option value="domestic">Domestic (Sri Lanka Only)</option>
+                    <option value="export">Export Oriented</option>
+                    <option value="mixed">Mixed (Local + Export)</option>
+                    <option value="tourism">Tourism / Foreigners</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Primary
+                    Location</label>
+                <select id="location" class="ios-input"
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1:px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                    <option value="general">All Island / General</option>
+                    <option value="colombo">Colombo</option>
+                    <option value="gampaha">Gampaha</option>
+                    <option value="kandy">Kandy</option>
+                    <option value="galle">Galle</option>
+                    <option value="jaffna">Jaffna</option>
+                    <option value="matara">Matara</option>
+                    <option value="kurunegala">Kurunegala</option>
+                    <option value="trincomalee">Trincomalee</option>
+                    <option value="batticaloa">Batticaloa</option>
+                    <option value="nuwara_eliya">Nuwara Eliya</option>
+                    <option value="hambantota">Hambantota</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Specific Business
+                    Activity (Keywords)</label>
+                <textarea id="description" rows="2" class="ios-input"
+                    placeholder="e.g. Solar panel installation, Tea export, Software development..."
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; resize: vertical;"></textarea>
+            </div>
+
+            <div class="form-actions" style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
+                <button type="submit" class="ios-btn primary" id="btn-analyze">
+                    <i class="fa-solid fa-microchip"></i> Run Feasibility Analysis
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loader" style="display: none; text-align: center; padding: 40px;">
+        <div class="status-pill active" style="display: inline-flex; width: auto;">
+            <span class="dot pulse"></span>
+            <span>Analyzing News, Market Data, and Regulatory Gazettes...</span>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-area" style="display: none;">
+
+        <!-- Summary Cards -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;">
+            <div class="glass-panel" style="text-align: center;">
+                <h4 style="color: var(--text-secondary); margin-bottom: 10px;">Market Sentiment</h4>
+                <div id="sentiment-score" style="font-size: 2rem; font-weight: 700; color: #34c759;">--</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">Based on recent news</div>
+            </div>
+            <div class="glass-panel" style="text-align: center;">
+                <h4 style="color: var(--text-secondary); margin-bottom: 10px;">Risk Level</h4>
+                <div id="risk-level" style="font-size: 2rem; font-weight: 700; color: #ff9500;">--</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">Operational & External</div>
+            </div>
+            <div class="glass-panel" style="text-align: center;">
+                <h4 style="color: var(--text-secondary); margin-bottom: 10px;">Gazette Mentions</h4>
+                <div id="gazette-count" style="font-size: 2rem; font-weight: 700; color: #007aff;">--</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">Relevant Regulations found</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+
+            <!-- Analysis Column -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <!-- Robot / AI Report -->
+                <div class="glass-panel">
+                    <h4 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-robot" style="color: var(--primary);"></i> AI Generated Insight
+                    </h4>
+                    <div id="ai-report" class="markdown-content"
+                        style="line-height: 1.6; color: rgba(255,255,255,0.9);"></div>
+                </div>
+
+                <!-- Strategic Suggestions -->
+                <div class="glass-panel" style="border-left: 4px solid #007aff;">
+                    <h4 style="color: #007aff; margin-bottom: 16px;">
+                        <i class="fa-solid fa-lightbulb" style="margin-right: 8px;"></i> Strategic Suggestions
+                    </h4>
+                    <ul id="suggestion-list" style="padding-left: 20px; font-size: 0.95rem; line-height: 1.5;"></ul>
+                </div>
+
+                <!-- Opportunities & Threats -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="glass-panel" style="border-left: 4px solid #34c759;">
+                        <h4 style="color: #34c759; margin-bottom: 12px;">Opportunities</h4>
+                        <ul id="opp-list" style="padding-left: 20px; font-size: 0.9rem;"></ul>
+                    </div>
+                    <div class="glass-panel" style="border-left: 4px solid #ff3b30;">
+                        <h4 style="color: #ff3b30; margin-bottom: 12px;">Threats & Risks</h4>
+                        <ul id="threat-list" style="padding-left: 20px; font-size: 0.9rem;"></ul>
+                    </div>
+                </div>
+
+                <!-- Gazettes / Regulatory References -->
+                <div class="glass-panel">
+                    <h4 style="margin-bottom: 16px;">
+                        <i class="fa-solid fa-scale-balanced" style="margin-right: 8px;"></i> Regulatory & Parliament
+                        Gazettes
+                    </h4>
+                    <div id="gazette-list" style="max-height: 200px; overflow-y: auto;">
+                        <p style="color: var(--text-secondary); font-style: italic;">No specific gazette entries found
+                            yet.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graphs Column -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div class="glass-panel">
+                    <h4 style="margin-bottom: 16px;">Sector Trend</h4>
+                    <canvas id="sectorTrendChart" height="200"></canvas>
+                </div>
+                <div class="glass-panel">
+                    <h4 style="margin-bottom: 16px;">Sentiment Distribution</h4>
+                    <canvas id="sentimentDistChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('analysis-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const formData = {
+            name: document.getElementById('company_name').value,
+            sector: document.getElementById('sector').value,
+            scale: document.getElementById('scale').value,
+            investment: document.getElementById('investment').value,
+            target_market: document.getElementById('target_market').value,
+            location: document.getElementById('location').value,
+            description: document.getElementById('description').value
+        };
+
+        // Show loader
+        document.getElementById('results-area').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+
+        fetch('/api/addons/analyze-company', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('results-area').style.display = 'block';
+
+                // Update Stats
+                document.getElementById('sentiment-score').innerText = data.sentiment_score;
+                document.getElementById('sentiment-score').style.color = data.sentiment_score > 0 ? '#34c759' : '#ff3b30';
+                document.getElementById('risk-level').innerText = data.risk_level;
+                document.getElementById('gazette-count').innerText = data.gazette_matches.length;
+
+                // Update Report
+                // Convert simple markdown-like **bold** to HTML strong tags
+                let rawReport = data.report_text;
+                let htmlReport = rawReport.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                document.getElementById('ai-report').innerHTML = htmlReport;
+
+                // Update Suggestions
+                const suggList = document.getElementById('suggestion-list');
+                suggList.innerHTML = '';
+                if (data.suggestions && data.suggestions.length > 0) {
+                    data.suggestions.forEach(item => {
+                        let li = document.createElement('li');
+                        li.style.marginBottom = "8px";
+                        li.textContent = item;
+                        suggList.appendChild(li);
+                    });
+                } else {
+                    let li = document.createElement('li');
+                    li.textContent = "No specific suggestions available at this time.";
+                    suggList.appendChild(li);
+                }
+
+                // Update Lists
+                const oppList = document.getElementById('opp-list');
+                oppList.innerHTML = '';
+                data.opportunities.forEach(item => {
+                    let li = document.createElement('li');
+                    li.textContent = item;
+                    oppList.appendChild(li);
+                });
+
+                const threatList = document.getElementById('threat-list');
+                threatList.innerHTML = '';
+                data.threats.forEach(item => {
+                    let li = document.createElement('li');
+                    li.textContent = item;
+                    threatList.appendChild(li);
+                });
+
+                // Update Gazettes
+                const gazetteContainer = document.getElementById('gazette-list');
+                if (data.gazette_matches.length > 0) {
+                    gazetteContainer.innerHTML = '';
+                    data.gazette_matches.forEach(item => {
+                        let div = document.createElement('div');
+                        div.style.padding = '10px';
+                        div.style.marginBottom = '8px';
+                        div.style.background = 'rgba(255,255,255,0.05)';
+                        div.style.borderRadius = '8px';
+                        div.innerHTML = `<strong>${item.date}</strong>: ${item.title} <a href="${item.link}" target="_blank" style="color: var(--primary); margin-left:8px;"><i class="fa-solid fa-external-link-alt"></i></a>`;
+                        gazetteContainer.appendChild(div);
+                    });
+                }
+
+                // Render Charts
+                renderCharts(data.charts);
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error analyzing data.');
+                document.getElementById('loader').style.display = 'none';
+            });
+    });
+
+    let trendChart = null;
+    let distChart = null;
+
+    function renderCharts(chartData) {
+        const ctx1 = document.getElementById('sectorTrendChart').getContext('2d');
+        const ctx2 = document.getElementById('sentimentDistChart').getContext('2d');
+
+        if (trendChart) trendChart.destroy();
+        if (distChart) distChart.destroy();
+
+        trendChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: chartData.trend.labels,
+                datasets: [{
+                    label: 'Related News Volume',
+                    data: chartData.trend.data,
+                    borderColor: '#0a84ff',
+                    backgroundColor: 'rgba(10, 132, 255, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        distChart = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Positive', 'Neutral', 'Negative'],
+                datasets: [{
+                    data: chartData.sentiment_dist,
+                    backgroundColor: ['#34c759', '#8e8e93', '#ff3b30'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } }
+            }
+        });
+    }
+</script>
+{% endblock %}

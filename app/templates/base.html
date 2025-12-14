@@ -42,6 +42,9 @@
                     <li class="{{ 'active' if request.endpoint == 'main.raw_data' else '' }}">
                         <a href="{{ url_for('main.raw_data') }}"><i class="fa-solid fa-database"></i> Raw Data</a>
                     </li>
+                    <li class="{{ 'active' if request.endpoint == 'main.addons' or request.endpoint == 'main.new_company_addon' else '' }}">
+                        <a href="{{ url_for('main.addons') }}"><i class="fa-solid fa-puzzle-piece"></i> Add-ons</a>
+                    </li>
                 </ul>
             </nav>
             <div class="settings {{ 'active' if request.endpoint == 'main.settings' else '' }}">

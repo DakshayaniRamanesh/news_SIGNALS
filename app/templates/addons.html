@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Add-ons{% endblock %}
+{% block header_title %}Extensions & Modules{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="glass-panel" style="padding: 30px;">
+        <h2 style="margin-bottom: 20px;">Available Add-ons</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 40px;">Enhance your dashboard with specialized modules
+            and analytical tools.</p>
+
+        <div class="addons-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+            <!-- New Company Add-on Card -->
+            <div class="addon-card"
+                style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; transition: transform 0.2s, background 0.2s; cursor: pointer;"
+                onclick="window.location.href='{{ url_for('main.new_company_addon') }}'">
+                <div class="addon-icon"
+                    style="background: var(--primary); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <i class="fa-solid fa-building" style="font-size: 24px; color: white;"></i>
+                </div>
+                <h3 style="margin-bottom: 10px;">New Company Feasibility</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">
+                    Analyze market conditions, opportunities, and threats for a new company setup.
+                    Includes news sentiment, operational risks, and relevant regulatory insights.
+                </p>
+                <div class="addon-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span
+                        style="font-size: 0.8rem; padding: 4px 12px; background: rgba(52, 199, 89, 0.2); color: #34c759; border-radius: 20px;">Active</span>
+                    <button class="ios-btn small">Open <i class="fa-solid fa-arrow-right"
+                            style="margin-left: 5px;"></i></button>
+                </div>
+            </div>
+
+            <!-- Placeholder for future addons -->
+            <div class="addon-card"
+                style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; opacity: 0.6;">
+                <div class="addon-icon"
+                    style="background: rgba(255, 255, 255, 0.1); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <i class="fa-solid fa-plus" style="font-size: 24px; color: rgba(255, 255, 255, 0.5);"></i>
+                </div>
+                <h3 style="margin-bottom: 10px; color: var(--text-secondary);">Coming Soon</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 20px;">more specialized
+                    modules are under development.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .addon-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+</style>
+{% endblock %}

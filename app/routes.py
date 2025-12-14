@@ -334,13 +334,33 @@ def subscribe():
         
     return render_template('subscribe.html')
 
-@main.route('/api/admin/send-report', methods=['POST'])
-def trigger_daily_report():
-    """Manually trigger the daily report blast to all subscribers."""
-    try:
-        from app.services.email_service import send_daily_reports
-        from flask import current_app
-        send_daily_reports(current_app._get_current_object())
-        return jsonify({"status": "success", "message": "Daily reports triggered"}), 200
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+@main.route('/addons')
+def addons():
+    return render_template('addons.html')
+
+@main.route('/addons/new-company')
+def new_company_addon():
+    return render_template('addon_new_company.html')
+
+@main.route('/api/addons/analyze-company', methods=['POST'])
+def api_analyze_company():
+    from app.services.addon_service import analyze_company_feasibility
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+        
+    name = data.get('name')
+    sector = data.get('sector')
+    description = data.get('description', '')
+    
+    # New Fields
+    scale = data.get('scale', 'small')
+    investment = data.get('investment', 'low')
+    target_market = data.get('target_market', 'domestic')
+    location = data.get('location', 'general')
+    
+    if not name or not sector:
+        return jsonify({"error": "Name and Sector are required"}), 400
+        
+    results = analyze_company_feasibility(name, sector, scale, investment, target_market, location, description, DATA_FILE)
+    return jsonify(results)
