@@ -9736,5 +9736,41 @@
     "event_flag": "Normal",
     "cluster_name": "Arrested, Police, Rs",
     "scraped_at": "2025-12-14 07:30:43"
+  },
+  {
+    "Source": "The Island",
+    "Title": "Angry fans throw chairs and bottles at Messi event in India",
+    "Link": "http://island.lk/angry-fans-throw-chairs-and-bottles-at-messi-event-in-india/",
+    "Summary": "Angry fans attending Lionel Messi&#8217;s tour of India ripped up seats and threw items towards the pitch after his appearance at Kolkata&#8217;s Salt Lake Stadium. Thousands of adoring supporters had paid up to 12,000 rupees (\u00a3100; $133) to catch a glimpse of the football star, but were left disappointed when he emerged to walk around [&#8230;]",
+    "Published": "Sun, 14 Dec 2025 01:59:59 +0000",
+    "SEO_Score": 6.38,
+    "cleaned": "angry fans throw chairs bottles messi event india angry fans attending lionel messi 8217 tour india ripped seats threw items towards pitch appearance kolkata 8217 salt lake stadium thousands adoring supporters paid 12 000 rupees 100 133 catch glimpse football star left disappointed emerged walk around 8230",
+    "topic_cluster": 5,
+    "sentiment_score": -0.4939,
+    "lexicon_score": 0.0,
+    "impact_score": -0.4939,
+    "impact_level": "Risk",
+    "operational_tag": "transport, economic",
+    "event_flag": "Normal",
+    "cluster_name": "Showers, Disaster, 8230",
+    "scraped_at": "2025-12-14 07:41:36"
+  },
+  {
+    "Source": "Daily News",
+    "Title": "Israel claims to have killed senior Hamas commander, Raed Saad, in Gaza",
+    "Link": "https://dailynews.lk/2025/12/14/breaking-news/914177/israel-claims-to-have-killed-senior-hamas-commander-raed-saad-in-gaza/",
+    "Summary": "The Israeli military sats it has killed senior Hamas commander Raed Saad in a strike in Gaza City. The attack on Saturday killed five people and wounded at least 25,&#8230;\nThe post Israel claims to have killed senior Hamas commander, Raed Saad, in Gaza appeared first on DailyNews.",
+    "Published": "Sun, 14 Dec 2025 02:10:13 +0000",
+    "SEO_Score": 5.8,
+    "cleaned": "israel claims killed senior hamas commander raed saad gaza israeli military sats killed senior hamas commander raed saad strike gaza city attack saturday killed five people wounded least 25 8230 post israel claims killed senior hamas commander raed saad gaza appeared first dailynews",
+    "topic_cluster": 5,
+    "sentiment_score": -0.9738,
+    "lexicon_score": -7.5,
+    "impact_score": -8.4738,
+    "impact_level": "High Risk",
+    "operational_tag": "security, sentiment",
+    "event_flag": "Normal",
+    "cluster_name": "Showers, Disaster, 8230",
+    "scraped_at": "2025-12-14 07:41:36"
   }
 ]

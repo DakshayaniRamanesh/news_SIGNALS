@@ -382,3 +382,22 @@ def api_analyze_stock():
     
     results = analyze_stock_market(horizon, risk, focus_sector, DATA_FILE)
     return jsonify(results)
+
+@main.route('/addons/job-seeker')
+def job_seeker_addon():
+    return render_template('addon_job_seeker.html')
+
+@main.route('/api/addons/analyze-jobs', methods=['POST'])
+def api_analyze_jobs():
+    from app.services.addon_service import analyze_job_market
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+        
+    industry = data.get('industry', 'general')
+    qualification = data.get('qualification')
+    linkedin = data.get('linkedin', '')
+    github = data.get('github', '')
+    
+    results = analyze_job_market(industry, qualification, linkedin, github, DATA_FILE)
+    return jsonify(results)

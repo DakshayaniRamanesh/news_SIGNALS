@@ -118,7 +118,7 @@ def scrape_recent_gazettes():
     
     urls = [
         "https://www.gazette.lk/government-gazette",
-        "http://documents.gov.lk/en/gazette_extra.php" 
+        "https://documents.gov.lk/view/gazettes/2025.html" 
     ]
     
     gazettes = []
@@ -555,4 +555,110 @@ def analyze_stock_market(horizon, risk, focus_sector, data_file):
         
     except Exception as e:
         logger.error(f"Stock analysis error: {e}", exc_info=True)
+        return {"error": f"Analysis Error: {str(e)}"}
+
+# --- Job Seeker Logic ---
+
+JOB_SECTOR_MAP = {
+    "it": ["software", "developer", "engineer", "data", "digital", "technology", "it", "computer", "analyst"],
+    "finance": ["bank", "finance", "accountant", "audit", "insurance", "investment", "credit"],
+    "management": ["manager", "admin", "executive", "officer", "secretary", "coordinator"],
+    "engineering": ["civil", "mechanical", "electrical", "engineer", "construction", "project"],
+    "education": ["teacher", "lecturer", "academic", "school", "university", "professor"],
+    "government": ["ministry", "department", "board", "authority", "service", "public"],
+    "marketing": ["sales", "marketing", "brand", "media", "digital marketing", "pr"],
+    "healthcare": ["doctor", "nurse", "medical", "hospital", "health", "clinical"]
+}
+
+def scrape_gazette_vacancies():
+    """Scrapes for government vacancies in gazettes."""
+    vacancies = []
+    # Use the general scraper but filter for vacancy keywords
+    general_gazettes = scrape_recent_gazettes()
+    
+    for g in general_gazettes:
+        # Check title for vacancy related keywords
+        title_lower = g['title'].lower()
+        if any(w in title_lower for w in ['vacanc', 'post of', 'recruitment', 'appointment', 'exam', 'cadet']):
+            vacancies.append(g)
+            
+    # Fallback if no specific scraper found
+    if not vacancies and general_gazettes:
+        vacancies = general_gazettes[:3] # Show general ones as potential sources
+        
+    return vacancies
+
+def analyze_job_market(industry, qualification, linkedin, github, data_file):
+    if not os.path.exists(data_file):
+        return {"error": "Data file not found"}
+        
+    try:
+        df = pd.read_csv(data_file)
+        
+        # 1. Demand Analysis
+        # Count recent news articles related to this sector to estimate "Activity/Demand"
+        keywords = JOB_SECTOR_MAP.get(industry, [])
+        if not keywords: keywords = [industry]
+        
+        pattern = '|'.join(keywords)
+        sector_news = df[df['cleaned'].str.contains(pattern, case=False, na=False)]
+        
+        recent_count = len(sector_news)
+        demand_level = "Medium"
+        if recent_count > 15: demand_level = "High"
+        elif recent_count < 5: demand_level = "Low"
+        
+        # 2. Find Opportunities (News items that look like hiring or expansion)
+        jobs = []
+        
+        # Keywords that suggest hiring in news
+        hiring_keywords = ["hiring", "recruit", "expand", "opening", "launch", "grow", "invest"]
+        
+        potential_opportunities = sector_news[sector_news['cleaned'].str.contains('|'.join(hiring_keywords), case=False, na=False)]
+        
+        for _, row in potential_opportunities.head(5).iterrows():
+            jobs.append({
+                "source": "News Signal",
+                "title": row['Title'],
+                "link": row['Link']
+            })
+            
+        # 3. Gazette Vacancies
+        gazette_vacs = scrape_gazette_vacancies()
+        
+        # 4. Career Advice Generator
+        advice = f"**{industry.upper()} Sector Analysis**\n"
+        advice += f"Current market activity is **{demand_level}**. "
+        
+        if demand_level == "High":
+            advice += "We are seeing significant news coverage in this sector, indicating expansion and potential hiring sprees. "
+        elif demand_level == "Low":
+            advice += "News volume is low. This might indicate a stable but static job market. Networking is key here. "
+            
+        advice += "\n\n**Profile Optimization**:\n"
+        if linkedin:
+            advice += "- **LinkedIn**: Detected. Ensure your 'About' section contains these keywords: " + ", ".join(keywords[:5]) + ". "
+        else:
+            advice += "- **LinkedIn**: Not detected. Creating a profile is highly recommended for this sector. "
+            
+        if industry == 'it' or industry == 'engineering':
+            if github:
+                advice += "\n- **Portfolio**: Good job having a link. Ensure your top repositories have clear READMEs. "
+            else:
+                advice += "\n- **Portfolio**: Missing. For technical roles, a GitHub/Portfolio link is a major differentiator. "
+        
+        if qualification == 'ol' or qualification == 'al':
+             advice += "\n- **Education**: With current qualifications, focus on entry-level roles or certificate courses to upskill."
+        elif qualification == 'bachelors' or qualification == 'masters':
+             advice += "\n- **Education**: Strong academic background. Focus on demonstrating practical application of your degree."
+
+        return {
+            "demand_level": demand_level,
+            "career_advice": advice,
+            "jobs": jobs,
+            "gazette_vacancies": gazette_vacs
+        }
+
+    except Exception as e:
+        logger.error(f"Job analysis error: {e}", exc_info=True)
         return {"error": f"Analysis Error: {str(e)}"}

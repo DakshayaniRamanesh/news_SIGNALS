@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Job Search{% endblock %}
+{% block header_title %}Smart Job Finder & Career Advisor{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Input Section -->
+    <div class="glass-panel" style="margin-bottom: 24px;">
+        <h3 style="margin-bottom: 20px;"><i class="fa-solid fa-briefcase"
+                style="margin-right: 10px; color: var(--primary);"></i>Candidate Profile</h3>
+        <form id="job-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Target Industry /
+                    Field</label>
+                <select id="industry" class="ios-input"
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                    <option value="it">Information Technology (IT/Software)</option>
+                    <option value="finance">Banking & Finance</option>
+                    <option value="management">Management & Admin</option>
+                    <option value="engineering">Engineering</option>
+                    <option value="education">Education & Academic</option>
+                    <option value="government">Government / Public Service</option>
+                    <option value="marketing">Sales & Marketing</option>
+                    <option value="healthcare">Healthcare</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Highest
+                    Qualification</label>
+                <select id="qualification" class="ios-input"
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+                    <option value="ol">GCE O/L</option>
+                    <option value="al">GCE A/L</option>
+                    <option value="diploma">Diploma / HND</option>
+                    <option value="bachelors">Bachelor's Degree</option>
+                    <option value="masters">Master's / MBA</option>
+                    <option value="phd">PhD / Doctorate</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">LinkedIn Profile URL
+                    (Optional)</label>
+                <input type="url" id="linkedin" class="ios-input" placeholder="https://linkedin.com/in/..."
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+            </div>
+
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-secondary);">GitHub/Portfolio URL
+                    (Optional)</label>
+                <input type="url" id="github" class="ios-input" placeholder="https://github.com/..."
+                    style="width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white;">
+            </div>
+
+            <div class="form-actions" style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
+                <button type="submit" class="ios-btn primary" id="btn-analyze">
+                    <i class="fa-solid fa-search"></i> Find Opportunities
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Loader -->
+    <div id="loader" style="display: none; text-align: center; padding: 40px;">
+        <div class="status-pill active" style="display: inline-flex; width: auto;">
+            <span class="dot pulse"></span>
+            <span>Scanning Gazettes, Job Boards & News...</span>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-area" style="display: none;">
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+
+            <!-- Main Content -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+
+                <!-- AI Strategy -->
+                <div class="glass-panel">
+                    <h4 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-user-graduate" style="color: var(--primary);"></i> Career Strategy
+                    </h4>
+                    <div id="career-advice" class="markdown-content"
+                        style="line-height: 1.6; color: rgba(255,255,255,0.9);"></div>
+                </div>
+
+                <!-- Job Listings -->
+                <div class="glass-panel">
+                    <h4 style="margin-bottom: 16px;">
+                        <i class="fa-solid fa-list-check" style="margin-right: 8px;"></i> Identified Opportunities
+                    </h4>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <th style="text-align: left; padding: 12px; color: var(--text-secondary);">Source
+                                    </th>
+                                    <th style="text-align: left; padding: 12px; color: var(--text-secondary);">Role /
+                                        Headline</th>
+                                    <th style="text-align: right; padding: 12px; color: var(--text-secondary);">Action
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="job-list">
+                                <!-- JS Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+
+                <!-- Profile Score -->
+                <div class="glass-panel" style="text-align: center;">
+                    <h4 style="color: var(--text-secondary); margin-bottom: 10px;">Market Demand</h4>
+                    <div id="demand-score" style="font-size: 2.5rem; font-weight: 700; color: #34c759;">--</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary);">For your profile</div>
+                </div>
+
+                <!-- Gazette Vacancies -->
+                <div class="glass-panel">
+                    <h4 style="margin-bottom: 12px; font-size: 0.9rem;">Government Gazette Vacancies</h4>
+                    <ul id="gazette-jobs"
+                        style="padding-left: 20px; font-size: 0.85rem; color: var(--text-secondary); max-height: 300px; overflow-y: auto;">
+                        <li>Scanning government docs...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('job-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const formData = {
+            industry: document.getElementById('industry').value,
+            qualification: document.getElementById('qualification').value,
+            linkedin: document.getElementById('linkedin').value,
+            github: document.getElementById('github').value
+        };
+
+        // Show loader
+        document.getElementById('results-area').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+
+        fetch('/api/addons/analyze-jobs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('results-area').style.display = 'block';
+
+                // Update Score
+                document.getElementById('demand-score').innerText = data.demand_level;
+                let color = '#34c759'; // High
+                if (data.demand_level === 'Medium') color = '#ff9500';
+                if (data.demand_level === 'Low') color = '#ff3b30';
+                document.getElementById('demand-score').style.color = color;
+
+                // Advice
+                let rawAdvice = data.career_advice;
+                let htmlAdvice = rawAdvice.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+                document.getElementById('career-advice').innerHTML = htmlAdvice;
+
+                // Job Table
+                const tbody = document.getElementById('job-list');
+                tbody.innerHTML = '';
+                if (data.jobs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">No exact matches found. Try broadening your industry.</td></tr>';
+                }
+                data.jobs.forEach(job => {
+                    let tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                    tr.innerHTML = `
+                <td style="padding: 12px; font-weight: 600; font-size:0.8rem; color: var(--primary);">${job.source}</td>
+                <td style="padding: 12px; opacity: 0.9;">${job.title}</td>
+                <td style="padding: 12px; text-align: right;">
+                    <a href="${job.link}" target="_blank" class="ios-btn small" style="text-decoration: none;">View</a>
+                </td>
+            `;
+                    tbody.appendChild(tr);
+                });
+
+                // Gazette List
+                const gazList = document.getElementById('gazette-jobs');
+                gazList.innerHTML = '';
+                if (data.gazette_vacancies.length > 0) {
+                    data.gazette_vacancies.forEach(g => {
+                        let li = document.createElement('li');
+                        li.style.marginBottom = '10px';
+                        li.innerHTML = `<a href="${g.link}" target="_blank" style="color: #64d2ff; text-decoration: none;">${g.title}</a> <span style="font-size:0.7em; opacity:0.6;">(${g.date})</span>`;
+                        gazList.appendChild(li);
+                    });
+                } else {
+                    gazList.innerHTML = '<li>No recent government vacancies found matching keywords.</li>';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error analyzing job market.');
+                document.getElementById('loader').style.display = 'none';
+            });
+    });
+</script>
+{% endblock %}
